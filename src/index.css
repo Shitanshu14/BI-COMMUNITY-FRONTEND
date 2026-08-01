@@ -1,0 +1,333 @@
+/* ===========================================================
+   SETU — Design tokens
+   Concept: ruled exam-notebook / roll-call ledger
+   =========================================================== */
+:root {
+  --ink: #17213b;
+  --ink-soft: #3c4a68;
+  --paper: #edeee6;
+  --paper-raised: #f6f6f0;
+  --line: #c9cabd;
+  --line-soft: #dcddd2;
+  --accent: #e8a33d;
+  --accent-ink: #6b4712;
+  --verified: #3f7d6b;
+  --danger: #b5432d;
+  --margin-rule: #a23b3b;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "IBM Plex Sans", -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --radius: 3px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+a { color: inherit; }
+
+button, input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+::selection { background: var(--accent); color: var(--ink); }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* -----------------------------------------------------------
+   Ruled paper background — signature texture
+   ----------------------------------------------------------- */
+.ruled-bg {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 35px,
+    var(--line-soft) 36px
+  );
+  background-attachment: local;
+}
+
+/* Left margin rule — the signature element */
+.margin-page {
+  position: relative;
+  padding-left: 56px;
+}
+.margin-page::before {
+  content: "";
+  position: absolute;
+  left: 34px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--margin-rule);
+  opacity: 0.55;
+}
+
+/* -----------------------------------------------------------
+   Layout shell
+   ----------------------------------------------------------- */
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 22px 32px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+.brand {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+}
+.brand .dot { color: var(--accent); }
+.topbar nav { display: flex; gap: 22px; align-items: center; }
+.nav-link {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+}
+.nav-link:hover, .nav-link.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+.main {
+  flex: 1;
+  max-width: 880px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 32px 80px;
+}
+
+/* -----------------------------------------------------------
+   Typography
+   ----------------------------------------------------------- */
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+h1 { font-size: 34px; }
+h2 { font-size: 24px; }
+h3 { font-size: 18px; }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.subtle { color: var(--ink-soft); font-size: 14px; }
+.serial {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--margin-rule);
+  opacity: 0.75;
+}
+
+/* -----------------------------------------------------------
+   Entries — ledger rows (community / post / comment)
+   ----------------------------------------------------------- */
+.entry {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.entry:first-child { padding-top: 0; }
+.entry-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.entry-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.entry-title:hover { text-decoration: underline; text-decoration-color: var(--accent); }
+.entry-body { color: var(--ink-soft); font-size: 14.5px; margin: 6px 0 8px; }
+.entry-meta {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* -----------------------------------------------------------
+   Badges
+   ----------------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--radius);
+  border: 1px solid currentColor;
+}
+.badge-verified { color: var(--verified); }
+.badge-role { color: var(--ink-soft); }
+.badge-type { color: var(--accent-ink); background: rgba(232,163,61,0.18); border-color: transparent; }
+
+/* -----------------------------------------------------------
+   Buttons + forms
+   ----------------------------------------------------------- */
+.btn {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.btn:hover { background: var(--ink); color: var(--paper); }
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-primary:hover { background: var(--accent-ink); border-color: var(--accent-ink); }
+.btn-accent { border-color: var(--accent); background: var(--accent); color: var(--ink); }
+.btn-accent:hover { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--paper); }
+.btn-ghost { border-color: transparent; padding: 8px 4px; }
+.btn-ghost:hover { background: none; color: var(--accent-ink); text-decoration: underline; }
+.btn-sm { padding: 6px 12px; font-size: 11px; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:disabled:hover { background: transparent; color: var(--ink); }
+
+label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+input[type="text"], input[type="email"], input[type="password"], textarea, select {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1.5px solid var(--line);
+  background: var(--paper-raised);
+  border-radius: var(--radius);
+  margin-bottom: 18px;
+}
+input:focus, textarea:focus, select:focus, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
+.field-row { display: flex; gap: 14px; }
+.field-row > * { flex: 1; }
+
+.card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 26px;
+}
+
+.form-wrap { max-width: 420px; margin: 40px auto; }
+
+.error-box {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--danger);
+  background: rgba(181,67,45,0.08);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.empty-state {
+  padding: 40px 0;
+  text-align: left;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+/* -----------------------------------------------------------
+   Chat
+   ----------------------------------------------------------- */
+.chat-log {
+  height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  background: var(--paper-raised);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}
+.chat-msg { margin-bottom: 12px; font-size: 14px; }
+.chat-msg .who { font-family: var(--font-mono); font-size: 11px; color: var(--margin-rule); margin-right: 6px; }
+.chat-msg .when { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-soft); margin-left: 6px; }
+.chat-input-row { display: flex; gap: 10px; }
+.chat-input-row input { margin-bottom: 0; }
+.chat-status { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
+.chat-status.live { color: var(--verified); }
+.chat-status.down { color: var(--danger); }
+
+/* -----------------------------------------------------------
+   Footer / misc
+   ----------------------------------------------------------- */
+.page-foot {
+  text-align: center;
+  padding: 30px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--line);
+}
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.split {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 640px) {
+  .main { padding: 24px 18px 60px; }
+  .margin-page { padding-left: 30px; }
+  .margin-page::before { left: 12px; }
+  .topbar { padding: 16px 18px; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .field-row { flex-direction: column; }
+}
