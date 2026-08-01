@@ -57,7 +57,7 @@ export default function PostDetail() {
   };
 
   return (
-    <div className="margin-page">
+    <div className="page">
       {post && (
         <Link className="nav-link" to={"/communities/" + post.community}>
           ← Back to community
@@ -69,15 +69,15 @@ export default function PostDetail() {
       {!post && <div className="empty-state">Loading…</div>}
 
       {post && (
-        <>
+        <div className="card" style={{ marginBottom: 10 }}>
           <span className="badge badge-type">{post.post_type}</span>
           <h1 style={{ marginTop: 10 }}>{post.title}</h1>
           <p className="subtle">{timeAgo(post.created_at)}</p>
-          <p>{post.body}</p>
+          <p style={{ color: "var(--ink-soft)" }}>{post.body}</p>
           <button className="btn btn-sm" onClick={like} disabled={liking} style={{ marginTop: 6 }}>
-            {(post.likes ? post.likes.length : 0)} ♡ Like
+            ♥ {(post.likes ? post.likes.length : 0)} Like
           </button>
-        </>
+        </div>
       )}
 
       <div style={{ height: 30 }} />

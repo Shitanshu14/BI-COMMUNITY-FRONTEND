@@ -34,7 +34,7 @@ export default function Register() {
 
   return (
     <div className="form-wrap">
-      <div className="eyebrow">New admission</div>
+      <div className="eyebrow">Join SETU</div>
       <h1>Create your account</h1>
       <div style={{ height: 20 }} />
       <form onSubmit={submit} className="card">

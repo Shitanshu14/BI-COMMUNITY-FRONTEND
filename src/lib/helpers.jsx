@@ -23,3 +23,23 @@ export function RoleBadge({ role, isVerified }) {
     </>
   );
 }
+
+const AVATAR_COLORS = ["#4f5bf0", "#7c5cf0", "#2fa4c9", "#e0765a", "#16a34a", "#c9548a"];
+
+function colorFor(seed) {
+  let hash = 0;
+  for (let i = 0; i < (seed || "").length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+export function Avatar({ name, size = 40 }) {
+  const initial = (name || "?").trim().charAt(0).toUpperCase();
+  return (
+    <span
+      className="avatar"
+      style={{ width: size, height: size, fontSize: size * 0.42, background: colorFor(name || "") }}
+    >
+      {initial}
+    </span>
+  );
+}

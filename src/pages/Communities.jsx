@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { Spinner, ErrorBox } from "../lib/helpers.jsx";
+import { Spinner, ErrorBox, Avatar } from "../lib/helpers.jsx";
 
 export default function Communities() {
   const navigate = useNavigate();
@@ -45,13 +45,13 @@ export default function Communities() {
   const items = Array.isArray(list) ? list : (list && list.results) || [];
 
   return (
-    <div className="margin-page">
+    <div>
       <div className="split">
         <div>
-          <div className="eyebrow">Roll call</div>
-          <h1>Communities</h1>
+          <div className="eyebrow">Communities</div>
+          <h1>Browse communities</h1>
         </div>
-        <button className="btn btn-accent" onClick={() => setShowForm((s) => !s)}>
+        <button className="btn btn-primary" onClick={() => setShowForm((s) => !s)}>
           {showForm ? "Cancel" : "+ New community"}
         </button>
       </div>
@@ -74,27 +74,27 @@ export default function Communities() {
         </form>
       )}
 
-      {list === null && <div className="empty-state">Fetching the register…</div>}
+      {list === null && <div className="empty-state">Loading communities…</div>}
       {list !== null && items.length === 0 && (
-        <div className="empty-state">No communities logged yet. Be the first entry.</div>
+        <div className="empty-state">No communities yet. Be the first to create one.</div>
       )}
 
-      {items.map((c, i) => (
-        <div className="entry" key={c.id}>
-          <div className="serial">{String(i + 1).padStart(2, "0")}</div>
-          <div className="entry-head">
-            <span className="entry-title" onClick={() => navigate("/communities/" + c.id)}>
-              {c.name}
-            </span>
-            {!c.is_public && <span className="badge badge-role">private</span>}
+      <div className="community-grid">
+        {items.map((c) => (
+          <div className="community-card" key={c.id} onClick={() => navigate("/communities/" + c.id)}>
+            <div className="community-card-head">
+              <Avatar name={c.name} size={40} />
+              {!c.is_public && <span className="badge badge-role">private</span>}
+              {c.is_member && <span className="badge badge-verified">joined</span>}
+            </div>
+            <div className="entry-title">{c.name}</div>
+            <div className="community-card-desc">{c.description || "No description yet."}</div>
+            <div className="community-card-meta">
+              <span>{c.member_count || 0} members</span>
+            </div>
           </div>
-          <div className="entry-body">{c.description}</div>
-          <div className="entry-meta">
-            <span>{c.member_count || 0} members</span>
-            {c.is_member && <span className="badge badge-verified">joined</span>}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

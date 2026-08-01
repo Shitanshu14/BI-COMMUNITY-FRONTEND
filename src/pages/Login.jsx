@@ -27,9 +27,9 @@ export default function Login() {
 
   return (
     <div className="form-wrap">
-      <div className="eyebrow">Entry no. 01</div>
+      <div className="eyebrow">Welcome back</div>
       <h1>Sign in</h1>
-      <p className="subtle">Mark your attendance to enter the community.</p>
+      <p className="subtle">Sign in to continue to your communities.</p>
       <div style={{ height: 20 }} />
       <form onSubmit={submit} className="card">
         <ErrorBox message={err} />

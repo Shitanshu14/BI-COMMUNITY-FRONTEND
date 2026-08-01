@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../lib/api.js";
-import { RoleBadge, timeAgo } from "../lib/helpers.jsx";
+import { RoleBadge, timeAgo, Avatar } from "../lib/helpers.jsx";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -16,11 +16,14 @@ export default function Profile() {
   if (!user) return <div className="empty-state">Loading…</div>;
 
   return (
-    <div className="margin-page">
-      <div className="eyebrow">Attendance record</div>
-      <h1>{user.username}</h1>
-      <div style={{ margin: "8px 0 20px" }}>
-        <RoleBadge role={user.role} isVerified={user.is_verified} />
+    <div className="page">
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 22 }}>
+        <Avatar name={user.username} size={64} />
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 4 }}>Profile</div>
+          <h1 style={{ marginBottom: 6 }}>{user.username}</h1>
+          <RoleBadge role={user.role} isVerified={user.is_verified} />
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: 26 }}>

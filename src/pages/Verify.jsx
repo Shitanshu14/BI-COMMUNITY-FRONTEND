@@ -28,7 +28,7 @@ export default function Verify() {
 
   return (
     <div className="form-wrap">
-      <div className="eyebrow">Verification desk</div>
+      <div className="eyebrow">Get verified</div>
       <h1>Get your badge</h1>
       <p className="subtle">Verified members carry a mark of trust across every community.</p>
       <div style={{ height: 20 }} />

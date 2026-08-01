@@ -59,7 +59,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="margin-page">
+    <div className="page">
       <Link className="nav-link" to={"/communities/" + communityId}>
         ← Back to community
       </Link>
