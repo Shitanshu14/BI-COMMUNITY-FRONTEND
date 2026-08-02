@@ -1,76 +1,87 @@
-# SETU — Frontend (React + Vite)
+# SETU Backend — Phase 0 (Bharat Intelligent)
 
-Professional version — same features aur design jo pehle diya tha, ab proper React project ke roop mein (fast build, optimized production bundle).
+Django + DRF + Channels backend for the SETU MVP (Feed | Chat | Members |
+Activities | Resources). Covers the 5 MVP features from the master brief:
 
-## Setup (pehli baar)
+1. Signup/Login + Profile — `users` app
+2. Community create/join/discovery — `communities` app
+3. Feed: post + like + comment (Question/Knowledge types) — `posts` app
+4. Real-time community chat — `chat` app (Django Channels, WebSocket)
+5. Manual verification (admin-approved) — `verification` app
 
-Terminal kholo, is folder mein jaake:
-
-```bash
-npm install
-```
-
-Ye saare packages download karega (React, React Router, Vite). Isme 1-2 minute lag sakta hai depending on internet speed.
-
-## Development mode mein chalana
+## Quick start (Week-1 setup)
 
 ```bash
-npm run dev
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+cp .env.example .env              # defaults to SQLite, zero config needed
+python manage.py migrate
+python manage.py createsuperuser  # for /admin/ — used for manual verification
+python manage.py runserver
 ```
 
-Terminal mein ek URL milega (usually `http://localhost:5173`) — usko browser mein kholo. Jab bhi code change karoge, page apne aap refresh ho jayega.
+Visit `http://127.0.0.1:8000/admin/` to manage users, communities, posts,
+and approve verification requests.
 
-## Production build (deploy ke liye)
+## Switching to real infra (Supabase Postgres + Redis)
 
-```bash
-npm run build
+1. In `.env`, set `USE_SQLITE=False` and fill in `DB_NAME`, `DB_USER`,
+   `DB_PASSWORD`, `DB_HOST` from your Supabase project settings.
+2. Install Redis locally (`brew install redis` / `apt install redis-server`)
+   or point `REDIS_HOST`/`REDIS_PORT` at a hosted Redis (e.g. Upstash).
+3. Run chat with Channels' dev server instead of plain `runserver`:
+   ```bash
+   pip install daphne
+   daphne setu_backend.asgi:application
+   ```
+4. Start a Celery worker for background jobs (notifications, later AI tasks):
+   ```bash
+   celery -A setu_backend worker -l info
+   ```
+
+## API surface (Phase 0/1)
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/users/register/` | POST | Signup |
+| `/api/users/login/` | POST | Login (JWT access+refresh) |
+| `/api/users/login/refresh/` | POST | Refresh JWT |
+| `/api/users/me/` | GET/PATCH | Own profile |
+| `/api/users/<id>/` | GET | Public profile |
+| `/api/communities/` | GET/POST | Discover / create communities (search via `?search=`) |
+| `/api/communities/<id>/join/` | POST | Join |
+| `/api/communities/<id>/leave/` | POST | Leave |
+| `/api/communities/<id>/members/` | GET | Member list |
+| `/api/posts/?community=<id>` | GET/POST | Feed for a community |
+| `/api/posts/<id>/like/` | POST | Toggle like |
+| `/api/posts/<id>/comments/` | GET/POST | Comments |
+| `/api/chat/<community_id>/history/` | GET | Last 50 chat messages |
+| `ws://.../ws/chat/<community_id>/` | WS | Live chat (Channels) |
+| `/api/verification/request/` | POST | Submit verification proof |
+| `/api/verification/me/` | GET | Own verification status |
+
+## App structure
+
+```
+setu_backend/     project settings, urls, asgi (Channels routing), celery.py
+users/            custom User model (role, headline, is_verified, reputation)
+communities/      Community, Membership (join/leave)
+posts/            Post, Comment (feed, like, comment)
+chat/             Message model + Channels consumer (real-time chat)
+verification/     VerificationRequest + admin approve/reject actions
 ```
 
-Isse ek `dist/` folder banega — ye optimized, fast-loading files hain jo tumhe deploy karni hain (Netlify/Vercel pe).
+## Notes
 
-## Deploy kaise karein (free)
-
-**Netlify (sabse aasan):**
-1. `npm run build` chalao pehle
-2. https://app.netlify.com/drop par jao
-3. `dist` folder ko drag-drop kar do
-4. Live URL mil jayega
-
-**Vercel:**
-1. https://vercel.com/new
-2. GitHub se connect karo (best) ya `dist` folder upload karo
-
-## Agar koi error aaye `npm install` ya `npm run dev` mein
-
-Screenshot bhej dena — is code ko maine bina internet access ke likha hai (offline environment mein), isliye agar koi package version mismatch ya import error aaye to turant fix kar dunga.
-
-## Backend URL badalna ho to
-
-`src/lib/api.js` file ki pehli line:
-```js
-export const API_BASE = "https://bi-community-backend.onrender.com";
-```
-
-## Folder structure
-
-```
-src/
-  main.jsx              - entry point
-  App.jsx                - saare routes yahan defined hain
-  index.css              - poora design system
-  lib/
-    api.js                - backend se baat karne wala code (fetch + JWT)
-    helpers.jsx            - chhote reusable components
-  context/
-    AuthContext.jsx        - login/logout/register state
-  components/
-    Topbar.jsx              - top navigation
-    RequireAuth.jsx         - login-required pages ko protect karta hai
-  pages/
-    Landing, Login, Register, Communities, CommunityDetail,
-    PostDetail, Chat, Profile, Verify
-```
-
-## Backend mein bhi ek chhota sa kaam karna hoga (jab deploy karo)
-
-Jab tumhara frontend live ho jaye (Netlify/Vercel URL mil jaye), uska domain Django backend ke `CORS_ALLOWED_ORIGINS` aur `CSRF_TRUSTED_ORIGINS` mein add karwana padega — warna login/API calls block ho jayenge. Deploy karke URL bhej dena, main backend update kar dunga.
+- `AUTH_USER_MODEL` is custom (`users.User`) — this was set before the
+  first migration, as required by Django.
+- Chat currently has one room per community (matches the mockups' single
+  "Chat" tab per community). 1:1 DMs can be added in Phase 2 by adding a
+  `recipient` field and making `community` nullable on `Message`.
+- Post types include `project`/`resource`/`poll` in the schema already so
+  no migration is needed when those ship in Phase 2 — just expose them in
+  the API/Flutter UI when ready.
+- Naming: package is called `setu_backend` for now; rename is just a
+  find-and-replace away once the final product name is locked.
