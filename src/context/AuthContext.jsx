@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { api, getTokens, setTokens, clearTokens } from "../lib/api.js";
+import { api } from "../lib/api.js";
 
 const AuthContext = createContext(null);
 
@@ -11,17 +11,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // No token to check for anymore — the browser sends the httpOnly auth
+  // cookie automatically, so we just ask "who am I" and see if it works.
   const loadMe = useCallback(async () => {
-    const { access } = getTokens();
-    if (!access) {
-      setLoading(false);
-      return;
-    }
     try {
       const me = await api("/api/users/me/");
       setUser(me);
     } catch {
-      clearTokens();
       setUser(null);
     } finally {
       setLoading(false);
@@ -33,22 +29,21 @@ export function AuthProvider({ children }) {
   }, [loadMe]);
 
   const login = async (email, password) => {
-    const data = await api("/api/users/login/", {
-      method: "POST",
-      body: { email, password },
-      auth: false,
-    });
-    setTokens(data.access, data.refresh);
-    await loadMe();
+    const data = await api("/api/users/login/", { method: "POST", body: { email, password } });
+    setUser(data.user);
   };
 
   const register = async (payload) => {
-    await api("/api/users/register/", { method: "POST", body: payload, auth: false });
-    await login(payload.email, payload.password);
+    const data = await api("/api/users/register/", { method: "POST", body: payload });
+    setUser(data.user);
   };
 
-  const logout = () => {
-    clearTokens();
+  const logout = async () => {
+    try {
+      await api("/api/users/logout/", { method: "POST" });
+    } catch {
+      // even if the request fails, drop the local session
+    }
     setUser(null);
   };
 

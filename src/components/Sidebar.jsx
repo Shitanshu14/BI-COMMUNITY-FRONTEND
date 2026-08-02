@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
 import { Avatar } from "../lib/helpers.jsx";
 
 const icons = {
@@ -40,12 +41,13 @@ const icons = {
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const linkClass = ({ isActive }) => "sidebar-link" + (isActive ? " active" : "");
 
-  const doLogout = () => {
-    logout();
+  const doLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -54,13 +56,16 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <NavLink to="/communities" className="sidebar-brand">
-        setu<span className="dot">.</span>
+        BiCommunity<span className="dot">.</span>
       </NavLink>
 
       <div className="sidebar-user" onClick={() => navigate("/profile")}>
         <Avatar name={user.username} size={36} />
         <div>
-          <div className="sidebar-user-name">{user.username}</div>
+          <div className="sidebar-user-name">
+            {user.username}
+            {user.is_verified && <span className="verified-tick" title="Verified">✓</span>}
+          </div>
           <div className="sidebar-user-sub">{user.headline || user.role}</div>
         </div>
       </div>
@@ -78,6 +83,18 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-foot">
+        <div className="theme-toggle-row">
+          <span>{theme === "dark" ? "🌙" : "☀️"} Dark Mode</span>
+          <button
+            type="button"
+            className={"theme-switch" + (theme === "dark" ? " on" : "")}
+            role="switch"
+            aria-checked={theme === "dark"}
+            onClick={toggleTheme}
+          >
+            <span className="theme-switch-knob" />
+          </button>
+        </div>
         <button className="sidebar-link" onClick={doLogout}>
           {icons.logout} Log out
         </button>

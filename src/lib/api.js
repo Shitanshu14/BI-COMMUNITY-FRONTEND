@@ -2,22 +2,11 @@
 export const API_BASE = "https://bi-community-backend.onrender.com";
 export const WS_BASE = API_BASE.replace(/^http/, "ws");
 
-export function getTokens() {
-  return {
-    access: localStorage.getItem("setu_access"),
-    refresh: localStorage.getItem("setu_refresh"),
-  };
-}
-
-export function setTokens(access, refresh) {
-  if (access) localStorage.setItem("setu_access", access);
-  if (refresh) localStorage.setItem("setu_refresh", refresh);
-}
-
-export function clearTokens() {
-  localStorage.removeItem("setu_access");
-  localStorage.removeItem("setu_refresh");
-}
+// Auth tokens live in httpOnly cookies set by the backend (see
+// users/views.py) — the browser attaches them automatically on every
+// request to API_BASE as long as `credentials: "include"` is set below.
+// This file never reads or stores a raw token, so JS on this page (and
+// therefore any XSS payload) has nothing to steal.
 
 function summarizeError(data) {
   if (typeof data === "string") return data;
@@ -31,40 +20,32 @@ function summarizeError(data) {
 }
 
 async function tryRefresh() {
-  const { refresh } = getTokens();
-  if (!refresh) return false;
   try {
     const res = await fetch(API_BASE + "/api/users/login/refresh/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh }),
+      credentials: "include",
     });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    setTokens(data.access, null);
-    return true;
+    return res.ok;
   } catch {
-    clearTokens();
     return false;
   }
 }
 
-export async function api(path, { method = "GET", body, auth = true, retry = true } = {}) {
-  const headers = { "Content-Type": "application/json" };
-  if (auth) {
-    const { access } = getTokens();
-    if (access) headers["Authorization"] = "Bearer " + access;
-  }
+export async function api(path, { method = "GET", body, retry = true } = {}) {
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+  const headers = {};
+  if (!isFormData) headers["Content-Type"] = "application/json";
 
   const res = await fetch(API_BASE + path, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    credentials: "include", // send/receive the httpOnly auth cookies
+    body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
   });
 
-  if (res.status === 401 && auth && retry) {
+  if (res.status === 401 && retry) {
     const refreshed = await tryRefresh();
-    if (refreshed) return api(path, { method, body, auth, retry: false });
+    if (refreshed) return api(path, { method, body, retry: false });
   }
 
   let data = null;

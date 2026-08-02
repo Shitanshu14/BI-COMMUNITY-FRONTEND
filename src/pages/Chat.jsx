@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { api, getTokens, WS_BASE } from "../lib/api.js";
+import { api, WS_BASE } from "../lib/api.js";
 import { timeAgo } from "../lib/helpers.jsx";
 
 export default function Chat() {
@@ -24,10 +24,7 @@ export default function Chat() {
       }
     })();
 
-    const { access } = getTokens();
-    const ws = new WebSocket(
-      WS_BASE + "/ws/chat/" + communityId + "/?token=" + encodeURIComponent(access || "")
-    );
+    const ws = new WebSocket(WS_BASE + "/ws/chat/" + communityId + "/");
     wsRef.current = ws;
     ws.onopen = () => setStatus("live");
     ws.onclose = () => setStatus("down");

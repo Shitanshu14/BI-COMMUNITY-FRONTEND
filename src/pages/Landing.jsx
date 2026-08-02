@@ -7,11 +7,11 @@ export default function Landing() {
 
   return (
     <div className="hero-wrap">
-      <div className="eyebrow">Bharat Intelligent Community</div>
+      <div className="eyebrow">BiCommunity · a product by Bharat Intelligent</div>
       <h1>A home for every student, educator and builder.</h1>
       <p className="subtle" style={{ fontSize: 15.5, margin: "14px 0 26px" }}>
-        SETU is where communities ask questions, share knowledge, ship projects and earn verified
-        badges that actually mean something.
+        BiCommunity is where communities ask questions, share knowledge, ship projects and earn
+        verified badges that actually mean something.
       </p>
       <button
         className="btn btn-primary"

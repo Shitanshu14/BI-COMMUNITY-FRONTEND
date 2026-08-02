@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { Spinner, ErrorBox, timeAgo } from "../lib/helpers.jsx";
+import { Spinner, ErrorBox, timeAgo, Avatar } from "../lib/helpers.jsx";
 
 export default function PostDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState(null);
   const [commentBody, setCommentBody] = useState("");
@@ -31,8 +32,8 @@ export default function PostDetail() {
   const like = async () => {
     setLiking(true);
     try {
-      await api("/api/posts/" + id + "/like/", { method: "POST" });
-      await load();
+      const res = await api("/api/posts/" + id + "/like/", { method: "POST" });
+      setPost((prev) => ({ ...prev, is_liked: res.liked, like_count: res.like_count }));
     } catch (ex) {
       setErr(ex.message);
     } finally {
@@ -70,12 +71,28 @@ export default function PostDetail() {
 
       {post && (
         <div className="card" style={{ marginBottom: 10 }}>
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, cursor: "pointer" }}
+            onClick={() => post.author?.id && navigate("/profile/" + post.author.id)}
+          >
+            <Avatar name={post.author?.username || "member"} size={38} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 5 }}>
+                {post.author?.username || "Member"}
+                {post.author?.is_verified && <span style={{ color: "var(--verified)", fontSize: 12 }}>✓</span>}
+              </div>
+              <div className="subtle" style={{ fontSize: 12 }}>
+                {post.author?.headline ? post.author.headline + " · " : ""}
+                {timeAgo(post.created_at)}
+              </div>
+            </div>
+          </div>
           <span className="badge badge-type">{post.post_type}</span>
           <h1 style={{ marginTop: 10 }}>{post.title}</h1>
-          <p className="subtle">{timeAgo(post.created_at)}</p>
           <p style={{ color: "var(--ink-soft)" }}>{post.body}</p>
-          <button className="btn btn-sm" onClick={like} disabled={liking} style={{ marginTop: 6 }}>
-            ♥ {(post.likes ? post.likes.length : 0)} Like
+          {post.image && <img src={post.image} alt="" className="post-image" />}
+          <button className={"btn btn-sm" + (post.is_liked ? " btn-primary" : "")} onClick={like} disabled={liking} style={{ marginTop: 6 }}>
+            {post.is_liked ? "♥" : "♡"} {post.like_count || 0} Like
           </button>
         </div>
       )}
@@ -100,6 +117,15 @@ export default function PostDetail() {
       {comments &&
         comments.map((c) => (
           <div className="entry" key={c.id}>
+            <div className="entry-head" style={{ marginBottom: 2 }}>
+              <span
+                style={{ fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                onClick={() => c.author?.id && navigate("/profile/" + c.author.id)}
+              >
+                {c.author?.username || "Member"}
+                {c.author?.is_verified && <span className="verified-tick">✓</span>}
+              </span>
+            </div>
             <div className="entry-body">{c.body}</div>
             <div className="entry-meta">
               <span>{timeAgo(c.created_at)}</span>

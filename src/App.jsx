@@ -60,6 +60,14 @@ function Routing() {
         }
       />
       <Route
+        path="/profile/:id"
+        element={
+          <RequireAuth>
+            <Profile />
+          </RequireAuth>
+        }
+      />
+      <Route
         path="/verify"
         element={
           <RequireAuth>
@@ -92,7 +100,7 @@ export default function App() {
       <div className="guest-main">
         <Routing />
       </div>
-      <div className="page-foot">SETU — Bharat Intelligent Community · built on Django + React</div>
+      <div className="page-foot">BiCommunity — a product by Bharat Intelligent · built on Django + React</div>
     </div>
   );
 }

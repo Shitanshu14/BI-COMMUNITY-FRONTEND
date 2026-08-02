@@ -5,7 +5,7 @@ export default function Topbar() {
   return (
     <div className="topbar">
       <NavLink to="/" className="brand" style={{ textDecoration: "none" }}>
-        setu<span className="dot">.</span>
+        BiCommunity<span className="dot">.</span>
       </NavLink>
       <nav>
         <NavLink to="/login" className="nav-link">
