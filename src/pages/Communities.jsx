@@ -7,18 +7,24 @@ export default function Communities() {
   const navigate = useNavigate();
   const [list, setList] = useState(null);
   const [err, setErr] = useState("");
+  const [query, setQuery] = useState("");
 
-  const load = async () => {
+  const load = async (search = "") => {
     try {
-      setList(await api("/api/communities/"));
+      const path = "/api/communities/" + (search ? "?search=" + encodeURIComponent(search) : "");
+      setList(await api(path));
     } catch (ex) {
       setErr(ex.message);
     }
   };
 
+  // Runs once on mount (query starts empty) and again 300ms after the user
+  // stops typing — a single effect avoids firing the initial load twice.
   useEffect(() => {
-    load();
-  }, []);
+    const t = setTimeout(() => load(query), query ? 300 : 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   const items = Array.isArray(list) ? list : (list && list.results) || [];
 
@@ -31,11 +37,23 @@ export default function Communities() {
         </div>
       </div>
 
+      <div style={{ height: 16 }} />
+      <input
+        type="text"
+        placeholder="Search communities…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        style={{ maxWidth: 420 }}
+      />
+      <div style={{ height: 16 }} />
+
       <ErrorBox message={err} />
 
       {list === null && <div className="empty-state">Loading communities…</div>}
       {list !== null && items.length === 0 && (
-        <div className="empty-state">No communities yet. Be the first to create one.</div>
+        <div className="empty-state">
+          {query ? `No communities match "${query}".` : "No communities yet. Be the first to create one."}
+        </div>
       )}
 
       <div className="community-grid">
