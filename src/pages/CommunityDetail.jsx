@@ -29,6 +29,23 @@ export default function CommunityDetail() {
   const [busy, setBusy] = useState(false);
   const [likeBusy, setLikeBusy] = useState(null);
 
+  const [joinBusy, setJoinBusy] = useState(false);
+
+  const toggleJoin = async () => {
+    if (!community) return;
+    setJoinBusy(true);
+    setErr("");
+    try {
+      const action = community.is_member ? "leave" : "join";
+      const res = await api("/api/communities/" + id + "/" + action + "/", { method: "POST" });
+      setCommunity((prev) => ({ ...prev, is_member: action === "join", member_count: res.member_count }));
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setJoinBusy(false);
+    }
+  };
+
   const load = async () => {
     try {
       const [c, p] = await Promise.all([
@@ -141,9 +158,23 @@ export default function CommunityDetail() {
               <h1 style={{ marginBottom: 0 }}>{community.name}</h1>
             </div>
           </div>
-          <button className="btn" onClick={() => navigate("/chat/" + id)}>
-            Open chat
-          </button>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            {community.is_member ? (
+              <>
+                <span className="badge badge-verified">✓ Joined</span>
+                <button className="btn btn-sm" onClick={toggleJoin} disabled={joinBusy}>
+                  {joinBusy ? <Spinner /> : "Leave"}
+                </button>
+              </>
+            ) : (
+              <button className="btn btn-primary" onClick={toggleJoin} disabled={joinBusy}>
+                {joinBusy ? <Spinner /> : "Join community"}
+              </button>
+            )}
+            <button className="btn" onClick={() => navigate("/chat/" + id)}>
+              Open chat
+            </button>
+          </div>
         </div>
       )}
 
@@ -151,26 +182,37 @@ export default function CommunityDetail() {
 
       <div className="feed-layout" style={{ marginTop: 20 }}>
         <div className="feed-main">
-          <div className="card composer">
-            <div className="composer-placeholder" onClick={() => setShowForm(true)}>
-              <Avatar name={user?.username} size={34} />
-              <span>What do you want to share?</span>
+          {community && !community.is_member ? (
+            <div className="card composer" style={{ textAlign: "center" }}>
+              <p className="subtle" style={{ margin: "6px 0 12px" }}>
+                Join this community to post, comment, and chat.
+              </p>
+              <button className="btn btn-primary" onClick={toggleJoin} disabled={joinBusy}>
+                {joinBusy ? <Spinner /> : "Join community"}
+              </button>
             </div>
-            <div className="composer-types">
-              {POST_TYPES.map((t) => (
-                <button
-                  type="button"
-                  key={t.value}
-                  className={"pill-btn" + (form.post_type === t.value && showForm ? " active" : "")}
-                  onClick={() => pickType(t.value)}
-                >
-                  <span>{t.icon}</span> {t.label}
-                </button>
-              ))}
+          ) : (
+            <div className="card composer">
+              <div className="composer-placeholder" onClick={() => setShowForm(true)}>
+                <Avatar name={user?.username} size={34} />
+                <span>What do you want to share?</span>
+              </div>
+              <div className="composer-types">
+                {POST_TYPES.map((t) => (
+                  <button
+                    type="button"
+                    key={t.value}
+                    className={"pill-btn" + (form.post_type === t.value && showForm ? " active" : "")}
+                    onClick={() => pickType(t.value)}
+                  >
+                    <span>{t.icon}</span> {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {showForm && (
+          {showForm && community?.is_member && (
             <form onSubmit={create} className="card" style={{ marginBottom: 18 }}>
               <label>Type</label>
               <select value={form.post_type} onChange={set("post_type")}>
