@@ -18,6 +18,9 @@ export default function Profile() {
   const [followBusy, setFollowBusy] = useState(false);
   const [err, setErr] = useState("");
   const [tab, setTab] = useState("posts"); // posts | communities
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ headline: "", bio: "" });
+  const [saveBusy, setSaveBusy] = useState(false);
 
   const isOwnProfile = !id || id === me?.id;
   const profileId = id || me?.id;
@@ -47,6 +50,26 @@ export default function Profile() {
       .then((v) => setVerif(Array.isArray(v) ? v : v.results || []))
       .catch(() => setVerif([]));
   }, [isOwnProfile]);
+
+  useEffect(() => {
+    if (profile) setEditForm({ headline: profile.headline || "", bio: profile.bio || "" });
+  }, [profile]);
+
+  const saveProfile = async (e) => {
+    e.preventDefault();
+    setSaveBusy(true);
+    setErr("");
+    try {
+      const updated = await api("/api/users/me/", { method: "PATCH", body: editForm });
+      setProfile((p) => ({ ...p, ...updated }));
+      setMe((u) => ({ ...u, ...updated }));
+      setEditing(false);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setSaveBusy(false);
+    }
+  };
 
   const toggleFollow = async () => {
     if (!profile) return;
@@ -98,9 +121,14 @@ export default function Profile() {
           </button>
         )}
         {isOwnProfile && (
-          <button className="btn" onClick={() => navigate("/verify")}>
-            Get verified
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn" onClick={() => setEditing((v) => !v)}>
+              {editing ? "Cancel" : "Edit profile"}
+            </button>
+            <button className="btn" onClick={() => navigate("/verify")}>
+              Get verified
+            </button>
+          </div>
         )}
       </div>
 
@@ -122,18 +150,46 @@ export default function Profile() {
       </div>
 
       <div className="card" style={{ marginBottom: 26, marginTop: 18 }}>
-        <label>Headline</label>
-        <p>{profile.headline || "—"}</p>
-        <label>Bio</label>
-        <p>{profile.bio || "—"}</p>
-        {isOwnProfile && (
+        {isOwnProfile && editing ? (
+          <form onSubmit={saveProfile}>
+            <label>Headline</label>
+            <input
+              type="text"
+              value={editForm.headline}
+              onChange={(e) => setEditForm({ ...editForm, headline: e.target.value })}
+              placeholder="e.g. Class 12 student, AI enthusiast"
+            />
+            <label>Bio</label>
+            <textarea
+              value={editForm.bio}
+              onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+              placeholder="A few lines about you"
+            />
+            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <button className="btn btn-primary" disabled={saveBusy}>
+                {saveBusy ? <Spinner /> : "Save"}
+              </button>
+              <button type="button" className="btn" onClick={() => setEditing(false)}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
           <>
-            <label>Email</label>
-            <p>{profile.email}</p>
+            <label>Headline</label>
+            <p>{profile.headline || "—"}</p>
+            <label>Bio</label>
+            <p>{profile.bio || "—"}</p>
+            {isOwnProfile && (
+              <>
+                <label>Email</label>
+                <p>{profile.email}</p>
+              </>
+            )}
+            <label>Reputation points</label>
+            <p>{profile.reputation_points || 0}</p>
           </>
         )}
-        <label>Reputation points</label>
-        <p>{profile.reputation_points || 0}</p>
       </div>
 
       <div className="composer-types" style={{ marginBottom: 16 }}>

@@ -2,16 +2,22 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Spinner, ErrorBox, timeAgo, Avatar } from "../lib/helpers.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState(null);
   const [commentBody, setCommentBody] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [liking, setLiking] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ title: "", body: "" });
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const load = async () => {
     try {
@@ -28,6 +34,40 @@ export default function PostDetail() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (post) setEditForm({ title: post.title, body: post.body });
+  }, [post]);
+
+  const isAuthor = post && user && post.author?.id === user.id;
+
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    setSaveBusy(true);
+    setErr("");
+    try {
+      const updated = await api("/api/posts/" + id + "/", { method: "PATCH", body: editForm });
+      setPost((prev) => ({ ...prev, ...updated }));
+      setEditing(false);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setSaveBusy(false);
+    }
+  };
+
+  const deletePost = async () => {
+    if (!window.confirm("Delete this post? This can't be undone.")) return;
+    setDeleteBusy(true);
+    setErr("");
+    try {
+      await api("/api/posts/" + id + "/", { method: "DELETE" });
+      navigate("/communities/" + post.community);
+    } catch (ex) {
+      setErr(ex.message);
+      setDeleteBusy(false);
+    }
+  };
 
   const like = async () => {
     setLiking(true);
@@ -87,9 +127,50 @@ export default function PostDetail() {
               </div>
             </div>
           </div>
-          <span className="badge badge-type">{post.post_type}</span>
-          <h1 style={{ marginTop: 10 }}>{post.title}</h1>
-          <p style={{ color: "var(--ink-soft)" }}>{post.body}</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <span className="badge badge-type">{post.post_type}</span>
+            {isAuthor && !editing && (
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="btn btn-sm" onClick={() => setEditing(true)}>
+                  Edit
+                </button>
+                <button className="btn btn-sm" onClick={deletePost} disabled={deleteBusy}>
+                  {deleteBusy ? <Spinner /> : "Delete"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {editing ? (
+            <form onSubmit={saveEdit} style={{ marginTop: 10 }}>
+              <label>Title</label>
+              <input
+                type="text"
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                required
+              />
+              <label>Body</label>
+              <textarea
+                value={editForm.body}
+                onChange={(e) => setEditForm({ ...editForm, body: e.target.value })}
+                required
+              />
+              <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                <button className="btn btn-primary btn-sm" disabled={saveBusy}>
+                  {saveBusy ? <Spinner /> : "Save"}
+                </button>
+                <button type="button" className="btn btn-sm" onClick={() => setEditing(false)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <h1 style={{ marginTop: 10 }}>{post.title}</h1>
+              <p style={{ color: "var(--ink-soft)" }}>{post.body}</p>
+            </>
+          )}
           {post.image && <img src={post.image} alt="" className="post-image" />}
           <button className={"btn btn-sm" + (post.is_liked ? " btn-primary" : "")} onClick={like} disabled={liking} style={{ marginTop: 6 }}>
             {post.is_liked ? "♥" : "♡"} {post.like_count || 0} Like
