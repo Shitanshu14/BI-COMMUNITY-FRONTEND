@@ -3,16 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Spinner, ErrorBox, timeAgo, Avatar } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-
-const POST_TYPES = [
-  { value: "question", label: "Question", icon: "❓" },
-  { value: "knowledge", label: "Knowledge", icon: "📘" },
-  { value: "project", label: "Project", icon: "🚀" },
-  { value: "resource", label: "Resource", icon: "🔖" },
-  { value: "poll", label: "Poll", icon: "📊" },
-];
-
-const typeIcon = (t) => (POST_TYPES.find((p) => p.value === t) || POST_TYPES[0]).icon;
+import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel, groupLabel } from "../lib/postTypes.js";
 
 export default function CommunityDetail() {
   const { id } = useParams();
@@ -30,6 +21,9 @@ export default function CommunityDetail() {
   const [likeBusy, setLikeBusy] = useState(null);
 
   const [joinBusy, setJoinBusy] = useState(false);
+  const [pinBusy, setPinBusy] = useState(null);
+  const [canModerate, setCanModerate] = useState(false);
+  const [filter, setFilter] = useState("all");
 
   const toggleJoin = async () => {
     if (!community) return;
@@ -64,10 +58,46 @@ export default function CommunityDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  useEffect(() => {
+    if (!user) return;
+    api("/api/communities/" + id + "/members/")
+      .then((members) => {
+        const mine = (members || []).find((m) => m.id === user.id);
+        setCanModerate(!!mine && (mine.role === "admin" || mine.role === "moderator"));
+      })
+      .catch(() => setCanModerate(false));
+  }, [id, user]);
+
+  const togglePin = async (postId) => {
+    setPinBusy(postId);
+    setErr("");
+    try {
+      const res = await api("/api/posts/" + postId + "/pin/", { method: "POST" });
+      setPosts((prev) => {
+        const next = prev.map((p) => (p.id === postId ? { ...p, is_pinned: res.is_pinned } : p));
+        // Keep pinned posts on top client-side too, so the toggle reflects
+        // instantly without waiting on a full reload.
+        return [...next].sort((a, b) => (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0));
+      });
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setPinBusy(null);
+    }
+  };
+
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
-  const pickType = (t) => {
-    setForm({ ...form, post_type: t });
+  // Top-level pick: Question / Post / Poll. Picking "Post" doesn't force a
+  // raw type by itself — it defaults to "knowledge" unless a subtype was
+  // already chosen, then the subtype pills (below) let the user refine it.
+  const pickType = (topValue) => {
+    setForm((f) => {
+      if (topValue === "post") {
+        return { ...f, post_type: groupOf(f.post_type) === "post" ? f.post_type : "knowledge" };
+      }
+      return { ...f, post_type: topValue };
+    });
     setShowForm(true);
   };
 
@@ -198,11 +228,12 @@ export default function CommunityDetail() {
                 <span>What do you want to share?</span>
               </div>
               <div className="composer-types">
-                {POST_TYPES.map((t) => (
+                {TOP_TYPES.map((t) => (
                   <button
                     type="button"
                     key={t.value}
-                    className={"pill-btn" + (form.post_type === t.value && showForm ? " active" : "")}
+                    title={t.hint}
+                    className={"pill-btn" + (groupOf(form.post_type) === t.value && showForm ? " active" : "")}
                     onClick={() => pickType(t.value)}
                   >
                     <span>{t.icon}</span> {t.label}
@@ -215,13 +246,24 @@ export default function CommunityDetail() {
           {showForm && community?.is_member && (
             <form onSubmit={create} className="card" style={{ marginBottom: 18 }}>
               <label>Type</label>
-              <select value={form.post_type} onChange={set("post_type")}>
-                {POST_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+              {groupOf(form.post_type) === "post" ? (
+                <div className="composer-subtypes">
+                  {POST_SUBTYPES.map((s) => (
+                    <button
+                      type="button"
+                      key={s.value}
+                      className={"pill-btn pill-btn-sm" + (form.post_type === s.value ? " active" : "")}
+                      onClick={() => setForm({ ...form, post_type: s.value })}
+                    >
+                      <span>{s.icon}</span> {s.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="composer-fixed-type">
+                  <span>{typeIcon(form.post_type)}</span> {groupLabel(form.post_type)}
+                </div>
+              )}
               <label>Title</label>
               <input type="text" value={form.title} onChange={set("title")} required />
               <label>Body</label>
@@ -276,13 +318,35 @@ export default function CommunityDetail() {
             </form>
           )}
 
+          {posts !== null && posts.length > 0 && (
+            <div className="filter-tabs">
+              {FILTER_TABS.map((t) => {
+                const count = t.value === "all" ? posts.length : posts.filter((p) => groupOf(p.post_type) === t.value).length;
+                return (
+                  <button
+                    type="button"
+                    key={t.value}
+                    className={"filter-tab" + (filter === t.value ? " active" : "")}
+                    onClick={() => setFilter(t.value)}
+                  >
+                    {t.label} <span className="filter-tab-count">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {posts === null && <div className="empty-state">Loading posts…</div>}
           {posts !== null && posts.length === 0 && (
             <div className="empty-state">No posts here yet. Start the discussion.</div>
           )}
 
-          {posts &&
-            posts.map((p) => (
+          {(() => {
+            const visible = posts ? posts.filter((p) => filter === "all" || groupOf(p.post_type) === filter) : [];
+            if (posts && posts.length > 0 && visible.length === 0) {
+              return <div className="empty-state">No {filter === "all" ? "" : filter} posts here yet.</div>;
+            }
+            return visible.map((p) => (
               <div className="post-card" key={p.id}>
                 <div className="post-head">
                   <div
@@ -301,7 +365,21 @@ export default function CommunityDetail() {
                       </div>
                     </div>
                   </div>
-                  <span className="badge badge-type">{p.post_type}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {p.is_pinned && <span className="badge badge-verified">📌 Pinned</span>}
+                    <span className="badge badge-type">{typeIcon(p.post_type)} {groupLabel(p.post_type)}</span>
+                    {subtypeLabel(p.post_type) && <span className="badge badge-tag">{subtypeLabel(p.post_type)}</span>}
+                    {canModerate && (
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        onClick={() => togglePin(p.id)}
+                        disabled={pinBusy === p.id}
+                      >
+                        {pinBusy === p.id ? <Spinner /> : p.is_pinned ? "Unpin" : "Pin"}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="post-body-row">
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -356,7 +434,8 @@ export default function CommunityDetail() {
                   </span>
                 </div>
               </div>
-            ))}
+            ));
+          })()}
         </div>
 
         {community && (
@@ -373,6 +452,7 @@ export default function CommunityDetail() {
               )}
             </div>
             <div className="card">
+              <div className="rail-title">Community info</div>
               <div className="rail-stat-row">
                 <span>Members</span>
                 <span className="rail-stat-num">{community.member_count || 0}</span>
@@ -382,10 +462,28 @@ export default function CommunityDetail() {
                 <span className="rail-stat-num">{posts ? posts.length : 0}</span>
               </div>
               <div className="rail-stat-row">
+                <span>Pinned</span>
+                <span className="rail-stat-num">{posts ? posts.filter((p) => p.is_pinned).length : 0}</span>
+              </div>
+              <div className="rail-stat-row">
                 <span>Visibility</span>
                 <span className="rail-stat-num">{community.is_public ? "Open" : "Private"}</span>
               </div>
             </div>
+
+            {posts && posts.some((p) => p.is_pinned) && (
+              <div className="card">
+                <div className="rail-title">📌 Pinned</div>
+                {posts
+                  .filter((p) => p.is_pinned)
+                  .map((p) => (
+                    <div key={p.id} className="rail-pinned-item" onClick={() => navigate("/posts/" + p.id)}>
+                      <span>{typeIcon(p.post_type)}</span>
+                      <span className="rail-pinned-title">{p.title}</span>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         )}
       </div>

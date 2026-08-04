@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Topbar from "./components/Topbar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
+import MobileNav from "./components/MobileNav.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 import Landing from "./pages/Landing.jsx";
@@ -12,6 +13,8 @@ import PostDetail from "./pages/PostDetail.jsx";
 import Chat from "./pages/Chat.jsx";
 import Profile from "./pages/Profile.jsx";
 import Verify from "./pages/Verify.jsx";
+import SearchResults from "./pages/SearchResults.jsx";
+import Settings from "./pages/Settings.jsx";
 
 function Routing() {
   return (
@@ -75,6 +78,22 @@ function Routing() {
           </RequireAuth>
         }
       />
+      <Route
+        path="/search"
+        element={
+          <RequireAuth>
+            <SearchResults />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <RequireAuth>
+            <Settings />
+          </RequireAuth>
+        }
+      />
       <Route path="*" element={<div className="empty-state">Page not found.</div>} />
     </Routes>
   );
@@ -90,6 +109,7 @@ export default function App() {
         <div className="content-area">
           <Routing />
         </div>
+        <MobileNav />
       </div>
     );
   }

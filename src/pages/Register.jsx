@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Spinner, ErrorBox } from "../lib/helpers.jsx";
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = searchParams.get("next");
+  const safeNext = next && next.startsWith("/") ? next : "/communities";
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -24,7 +27,7 @@ export default function Register() {
     setBusy(true);
     try {
       await register(form);
-      navigate("/communities");
+      navigate(safeNext);
     } catch (ex) {
       setErr(ex.message);
     } finally {
@@ -70,7 +73,7 @@ export default function Register() {
         </button>
       </form>
       <p className="subtle" style={{ marginTop: 16 }}>
-        Already registered? <Link to="/login" style={{ textDecoration: "underline" }}>Sign in</Link>
+        Already registered? <Link to={"/login" + (next ? "?next=" + encodeURIComponent(next) : "")} style={{ textDecoration: "underline" }}>Sign in</Link>
       </p>
     </div>
   );

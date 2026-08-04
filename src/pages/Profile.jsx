@@ -3,9 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../lib/api.js";
 import { RoleBadge, timeAgo, Avatar, ErrorBox, Spinner } from "../lib/helpers.jsx";
-
-const typeIcon = (t) =>
-  ({ question: "❓", knowledge: "📖", project: "🚀", resource: "📦", poll: "📊" }[t] || "📝");
+import { typeIcon } from "../lib/postTypes.js";
 
 export default function Profile() {
   const { id } = useParams(); // undefined -> "my own profile"
@@ -16,6 +14,7 @@ export default function Profile() {
   const [posts, setPosts] = useState(null);
   const [verif, setVerif] = useState(null);
   const [followBusy, setFollowBusy] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
   const [err, setErr] = useState("");
   const [tab, setTab] = useState("posts"); // posts | communities
   const [editing, setEditing] = useState(false);
@@ -95,6 +94,30 @@ export default function Profile() {
     }
   };
 
+  const toggleBlock = async () => {
+    if (!profile) return;
+    const action = profile.is_blocked ? "unblock" : "block";
+    if (action === "block" && !window.confirm(`Block ${profile.username}? You'll stop seeing each other's posts, comments, and follows.`)) {
+      return;
+    }
+    setBlockBusy(true);
+    setErr("");
+    try {
+      await api("/api/users/" + profile.id + "/" + action + "/", { method: "POST" });
+      setProfile((p) => ({
+        ...p,
+        is_blocked: action === "block",
+        // Blocking also drops any existing follow relationship server-side.
+        is_following: action === "block" ? false : p.is_following,
+        follow_status: action === "block" ? null : p.follow_status,
+      }));
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setBlockBusy(false);
+    }
+  };
+
   if (!profile) return <div className="empty-state">{err ? <ErrorBox message={err} /> : "Loading…"}</div>;
 
   const followLabel = profile.follow_status === "accepted" ? "Following" : profile.follow_status === "pending" ? "Requested" : "Follow";
@@ -111,14 +134,29 @@ export default function Profile() {
           </h1>
           <RoleBadge role={profile.role} isVerified={profile.is_verified} />
         </div>
-        {!isOwnProfile && (
-          <button
-            className={"btn" + (profile.follow_status ? "" : " btn-primary")}
-            onClick={toggleFollow}
-            disabled={followBusy}
-          >
-            {followBusy ? <Spinner /> : followLabel}
-          </button>
+        {!isOwnProfile && !profile.has_blocked_me && (
+          <div style={{ display: "flex", gap: 8 }}>
+            {!profile.is_blocked && (
+              <button
+                className={"btn" + (profile.follow_status ? "" : " btn-primary")}
+                onClick={toggleFollow}
+                disabled={followBusy}
+              >
+                {followBusy ? <Spinner /> : followLabel}
+              </button>
+            )}
+            <button
+              className="btn btn-sm"
+              onClick={toggleBlock}
+              disabled={blockBusy}
+              style={profile.is_blocked ? {} : { color: "var(--danger)" }}
+            >
+              {blockBusy ? <Spinner /> : profile.is_blocked ? "Unblock" : "Block"}
+            </button>
+          </div>
+        )}
+        {!isOwnProfile && profile.has_blocked_me && (
+          <span className="badge badge-role">Unavailable</span>
         )}
         {isOwnProfile && (
           <div style={{ display: "flex", gap: 10 }}>

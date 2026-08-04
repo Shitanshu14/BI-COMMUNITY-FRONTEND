@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { Avatar } from "../lib/helpers.jsx";
+import SearchBar from "./SearchBar.jsx";
 
 const icons = {
   home: (
@@ -37,6 +38,12 @@ const icons = {
       <path d="M21 12H9" />
     </svg>
   ),
+  settings: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" />
+    </svg>
+  ),
 };
 
 export default function Sidebar() {
@@ -70,6 +77,10 @@ export default function Sidebar() {
         </div>
       </div>
 
+      <div style={{ margin: "2px 0 12px" }}>
+        <SearchBar />
+      </div>
+
       <nav className="sidebar-nav">
         <NavLink to="/communities" className={linkClass}>
           {icons.communities} Communities
@@ -79,6 +90,9 @@ export default function Sidebar() {
         </NavLink>
         <NavLink to="/profile" className={linkClass}>
           {icons.profile} Profile
+        </NavLink>
+        <NavLink to="/settings" className={linkClass}>
+          {icons.settings} Settings
         </NavLink>
       </nav>
 

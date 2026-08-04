@@ -19,16 +19,18 @@ export default function Chat() {
         const history = await api("/api/chat/" + communityId + "/history/");
         const items = Array.isArray(history) ? history : history.results || [];
         if (!cancelled) setMessages(items.reverse());
-      } catch {
-        // chat can just start empty if history fails
+      } catch (ex) {
+        // A 403 here means "not a member yet" — surface that clearly instead
+        // of silently starting an empty chat the person can't actually use.
+        if (!cancelled && ex.status === 403) setStatus("not-a-member");
       }
     })();
 
     const ws = new WebSocket(WS_BASE + "/ws/chat/" + communityId + "/");
     wsRef.current = ws;
     ws.onopen = () => setStatus("live");
-    ws.onclose = () => setStatus("down");
-    ws.onerror = () => setStatus("down");
+    ws.onclose = (evt) => setStatus(evt.code === 4003 ? "not-a-member" : "down");
+    ws.onerror = () => setStatus((s) => (s === "not-a-member" ? s : "down"));
     ws.onmessage = (evt) => {
       try {
         const data = JSON.parse(evt.data);
@@ -64,16 +66,20 @@ export default function Chat() {
       <div className="eyebrow">Live</div>
       <h1>Community chat</h1>
 
-      <div className={"chat-status " + (status === "live" ? "live" : status === "down" ? "down" : "")}>
+      <div className={"chat-status " + (status === "live" ? "live" : status === "down" || status === "not-a-member" ? "down" : "")}>
         {status === "live"
           ? "● connected"
+          : status === "not-a-member"
+          ? "Join this community to view and send messages."
           : status === "down"
           ? "● disconnected — messages won't send"
           : "connecting…"}
       </div>
 
       <div className="chat-log" ref={logRef}>
-        {messages.length === 0 && <div className="empty-state">No messages yet. Say hello.</div>}
+        {status !== "not-a-member" && messages.length === 0 && (
+          <div className="empty-state">No messages yet. Say hello.</div>
+        )}
         {messages.map((m, i) => (
           <div className="chat-msg" key={m.id || i}>
             <span className="who">
@@ -85,17 +91,19 @@ export default function Chat() {
         ))}
       </div>
 
-      <form onSubmit={send} className="chat-input-row">
-        <input
-          type="text"
-          placeholder="Type a message…"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <button className="btn btn-primary" disabled={status !== "live"}>
-          Send
-        </button>
-      </form>
+      {status !== "not-a-member" && (
+        <form onSubmit={send} className="chat-input-row">
+          <input
+            type="text"
+            placeholder="Type a message…"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <button className="btn btn-primary" disabled={status !== "live"}>
+            Send
+          </button>
+        </form>
+      )}
     </div>
   );
 }
