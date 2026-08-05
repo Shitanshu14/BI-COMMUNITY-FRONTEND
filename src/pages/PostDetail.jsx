@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { Spinner, ErrorBox, timeAgo, Avatar } from "../lib/helpers.jsx";
+import { Spinner, ErrorBox, timeAgo, Avatar, VideoEmbed } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { typeIcon, subtypeLabel, groupLabel } from "../lib/postTypes.js";
+import { extractVideoEmbed } from "../lib/embed.js";
 
 function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
   const { user } = useAuth();
@@ -113,6 +114,8 @@ export default function PostDetail() {
   const [pinBusy, setPinBusy] = useState(false);
   const [canModerate, setCanModerate] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [voting, setVoting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const loadComments = async () => {
     const c = await api("/api/posts/" + id + "/comments/");
@@ -202,6 +205,32 @@ export default function PostDetail() {
       setErr(ex.message);
     } finally {
       setPinBusy(false);
+    }
+  };
+
+  const vote = async (optionId) => {
+    setVoting(true);
+    setErr("");
+    try {
+      const res = await api("/api/posts/" + id + "/vote/", { method: "POST", body: { option_id: optionId } });
+      setPost((prev) => ({ ...prev, voted_option_id: res.voted_option_id, poll_options: res.options }));
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setVoting(false);
+    }
+  };
+
+  const toggleSave = async () => {
+    setSaving(true);
+    setErr("");
+    try {
+      const res = await api("/api/posts/" + id + "/save/", { method: "POST" });
+      setPost((prev) => ({ ...prev, is_saved: res.saved }));
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -326,9 +355,48 @@ export default function PostDetail() {
             </>
           )}
           {post.image && <img src={post.image} alt="" className="post-image" />}
-          <button className={"btn btn-sm" + (post.is_liked ? " btn-primary" : "")} onClick={like} disabled={liking} style={{ marginTop: 6 }}>
-            {post.is_liked ? "♥" : "♡"} {post.like_count || 0} Like
-          </button>
+          {(() => {
+            const embed = extractVideoEmbed(post.body);
+            return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;
+          })()}
+
+          {post.post_type === "poll" && post.poll_options?.length > 0 && (
+            <div className="poll-options" style={{ marginTop: 6 }}>
+              {(() => {
+                const total = post.poll_options.reduce((s, o) => s + (o.vote_count || 0), 0);
+                return post.poll_options.map((o, idx) => {
+                  const pct = total > 0 ? Math.round(((o.vote_count || 0) / total) * 100) : 0;
+                  const picked = post.voted_option_id === o.id;
+                  return (
+                    <button
+                      type="button"
+                      key={o.id}
+                      className={"poll-option c" + (idx % 5) + (picked ? " picked" : "")}
+                      onClick={() => vote(o.id)}
+                      disabled={voting}
+                    >
+                      <div className="poll-option-fill" style={{ width: pct + "%" }} />
+                      <span className="poll-option-label">{picked ? "✓ " : ""}{o.text}</span>
+                      <span className="poll-option-pct">{pct}%</span>
+                    </button>
+                  );
+                });
+              })()}
+              <div className="poll-meta">
+                <span>{post.poll_options.reduce((s, o) => s + (o.vote_count || 0), 0)} votes</span>
+                {post.voted_option_id && <span>You voted ✓</span>}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <button className={"btn btn-sm" + (post.is_liked ? " btn-primary" : "")} onClick={like} disabled={liking}>
+              {post.is_liked ? "♥" : "♡"} {post.like_count || 0} Like
+            </button>
+            <button className={"btn btn-sm" + (post.is_saved ? " btn-primary" : "")} onClick={toggleSave} disabled={saving}>
+              {post.is_saved ? "🔖 Saved" : "🔖 Save"}
+            </button>
+          </div>
         </div>
       )}
 

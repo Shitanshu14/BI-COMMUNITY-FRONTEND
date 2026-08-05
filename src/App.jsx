@@ -15,6 +15,9 @@ import Profile from "./pages/Profile.jsx";
 import Verify from "./pages/Verify.jsx";
 import SearchResults from "./pages/SearchResults.jsx";
 import Settings from "./pages/Settings.jsx";
+import SavedPosts from "./pages/SavedPosts.jsx";
+import Messages from "./pages/Messages.jsx";
+import MessageThread from "./pages/MessageThread.jsx";
 
 function Routing() {
   return (
@@ -91,6 +94,30 @@ function Routing() {
         element={
           <RequireAuth>
             <Settings />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/saved"
+        element={
+          <RequireAuth>
+            <SavedPosts />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <RequireAuth>
+            <Messages />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/messages/:userId"
+        element={
+          <RequireAuth>
+            <MessageThread />
           </RequireAuth>
         }
       />

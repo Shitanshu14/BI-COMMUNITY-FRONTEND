@@ -5,6 +5,61 @@ import { api } from "../lib/api.js";
 import { RoleBadge, timeAgo, Avatar, ErrorBox, Spinner } from "../lib/helpers.jsx";
 import { typeIcon } from "../lib/postTypes.js";
 
+function FollowListModal({ userId, kind, onClose }) {
+  // kind: "followers" | "following"
+  const navigate = useNavigate();
+  const [list, setList] = useState(null);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    api("/api/users/" + userId + "/" + kind + "/")
+      .then((res) => !cancelled && setList(Array.isArray(res) ? res : res.results || []))
+      .catch((ex) => !cancelled && setErr(ex.message));
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, kind]);
+
+  const goTo = (u) => {
+    onClose();
+    navigate("/profile/" + u.id);
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h3>{kind === "followers" ? "Followers" : "Following"}</h3>
+          <button className="modal-close" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className="modal-body">
+          {err && <ErrorBox message={err} />}
+          {list === null && !err && <div className="empty-state">Loading…</div>}
+          {list && list.length === 0 && (
+            <div className="empty-state">{kind === "followers" ? "No followers yet." : "Not following anyone yet."}</div>
+          )}
+          {list &&
+            list.map((u) => (
+              <div className="user-row" key={u.id} onClick={() => goTo(u)}>
+                <Avatar name={u.username} size={38} />
+                <div className="user-row-meta">
+                  <div className="user-row-name">
+                    {u.username}
+                    {u.is_verified && <span className="verified-tick">✓</span>}
+                  </div>
+                  <div className="user-row-sub">{u.headline || u.role}</div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Profile() {
   const { id } = useParams(); // undefined -> "my own profile"
   const { user: me, setUser: setMe } = useAuth();
@@ -20,6 +75,7 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ headline: "", bio: "" });
   const [saveBusy, setSaveBusy] = useState(false);
+  const [listModal, setListModal] = useState(null); // "followers" | "following" | null
 
   const isOwnProfile = !id || id === me?.id;
   const profileId = id || me?.id;
@@ -145,6 +201,11 @@ export default function Profile() {
                 {followBusy ? <Spinner /> : followLabel}
               </button>
             )}
+            {!profile.is_blocked && (
+              <button className="btn btn-sm" onClick={() => navigate("/messages/" + profile.id)}>
+                ✉️ Message
+              </button>
+            )}
             <button
               className="btn btn-sm"
               onClick={toggleBlock}
@@ -176,16 +237,18 @@ export default function Profile() {
         <div>
           <strong>{profile.post_count ?? 0}</strong> <span>Posts</span>
         </div>
-        <div>
+        <div className="profile-stat-clickable" onClick={() => setListModal("followers")}>
           <strong>{profile.follower_count ?? 0}</strong> <span>Followers</span>
         </div>
-        <div>
+        <div className="profile-stat-clickable" onClick={() => setListModal("following")}>
           <strong>{profile.following_count ?? 0}</strong> <span>Following</span>
         </div>
         <div>
           <strong>{profile.communities?.length ?? 0}</strong> <span>Communities</span>
         </div>
       </div>
+
+      {listModal && <FollowListModal userId={profile.id} kind={listModal} onClose={() => setListModal(null)} />}
 
       <div className="card" style={{ marginBottom: 26, marginTop: 18 }}>
         {isOwnProfile && editing ? (

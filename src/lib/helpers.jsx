@@ -43,3 +43,17 @@ export function Avatar({ name, size = 40 }) {
     </span>
   );
 }
+
+export function VideoEmbed({ src, provider }) {
+  return (
+    <div className="video-embed">
+      <iframe
+        src={src}
+        title={provider + " video"}
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    </div>
+  );
+}

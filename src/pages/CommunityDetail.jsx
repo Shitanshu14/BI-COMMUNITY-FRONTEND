@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { Spinner, ErrorBox, timeAgo, Avatar } from "../lib/helpers.jsx";
+import { Spinner, ErrorBox, timeAgo, Avatar, VideoEmbed } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel, groupLabel } from "../lib/postTypes.js";
+import { extractVideoEmbed } from "../lib/embed.js";
 
 export default function CommunityDetail() {
   const { id } = useParams();
@@ -19,6 +20,7 @@ export default function CommunityDetail() {
   const [imagePreview, setImagePreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [likeBusy, setLikeBusy] = useState(null);
+  const [saveBusy, setSaveBusy] = useState(null);
 
   const [joinBusy, setJoinBusy] = useState(false);
   const [pinBusy, setPinBusy] = useState(null);
@@ -170,6 +172,18 @@ export default function CommunityDetail() {
     }
   };
 
+  const toggleSave = async (postId) => {
+    setSaveBusy(postId);
+    try {
+      const res = await api("/api/posts/" + postId + "/save/", { method: "POST" });
+      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, is_saved: res.saved } : p)));
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setSaveBusy(null);
+    }
+  };
+
   return (
     <div>
       <Link className="nav-link" to="/communities">
@@ -295,9 +309,26 @@ export default function CommunityDetail() {
                 </div>
               )}
               <label>Image (optional)</label>
-              <input type="file" accept="image/*" onChange={onImage} style={{ marginBottom: 14 }} />
-              {imagePreview && (
-                <img src={imagePreview} alt="" style={{ maxWidth: "100%", borderRadius: 10, marginBottom: 14 }} />
+              {!imagePreview ? (
+                <label className="image-dropzone">
+                  <input type="file" accept="image/*" onChange={onImage} style={{ display: "none" }} />
+                  <span className="image-dropzone-icon">📷</span>
+                  <span>Click to add an image</span>
+                </label>
+              ) : (
+                <div className="image-preview-wrap">
+                  <img src={imagePreview} alt="" className="image-preview" />
+                  <button
+                    type="button"
+                    className="image-preview-remove"
+                    onClick={() => {
+                      setImage(null);
+                      setImagePreview(null);
+                    }}
+                  >
+                    ✕ Remove
+                  </button>
+                </div>
               )}
               <div style={{ display: "flex", gap: 10 }}>
                 <button className="btn btn-primary" disabled={busy}>
@@ -391,14 +422,14 @@ export default function CommunityDetail() {
                       <div className="poll-options">
                         {(() => {
                           const total = p.poll_options.reduce((s, o) => s + (o.vote_count || 0), 0);
-                          return p.poll_options.map((o) => {
+                          return p.poll_options.map((o, idx) => {
                             const pct = total > 0 ? Math.round(((o.vote_count || 0) / total) * 100) : 0;
                             const picked = p.voted_option_id === o.id;
                             return (
                               <button
                                 type="button"
                                 key={o.id}
-                                className={"poll-option" + (picked ? " picked" : "")}
+                                className={"poll-option c" + (idx % 5) + (picked ? " picked" : "")}
                                 onClick={() => vote(p.id, o.id)}
                               >
                                 <div className="poll-option-fill" style={{ width: pct + "%" }} />
@@ -408,6 +439,10 @@ export default function CommunityDetail() {
                             );
                           });
                         })()}
+                        <div className="poll-meta">
+                          <span>{p.poll_options.reduce((s, o) => s + (o.vote_count || 0), 0)} votes</span>
+                          {p.voted_option_id && <span>You voted ✓</span>}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -418,6 +453,10 @@ export default function CommunityDetail() {
                   )}
                 </div>
                 {p.image && <img src={p.image} alt="" className="post-image" />}
+                {(() => {
+                  const embed = extractVideoEmbed(p.body);
+                  return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;
+                })()}
                 <div className="post-footer">
                   <button
                     className={"post-footer-action" + (p.is_liked ? " liked" : "")}
@@ -429,6 +468,13 @@ export default function CommunityDetail() {
                   <span className="post-footer-action" style={{ cursor: "default" }}>
                     💬 {p.comment_count || 0}
                   </span>
+                  <button
+                    className={"post-footer-action" + (p.is_saved ? " saved" : "")}
+                    onClick={() => toggleSave(p.id)}
+                    disabled={saveBusy === p.id}
+                  >
+                    {p.is_saved ? "🔖 Saved" : "🔖 Save"}
+                  </button>
                   <span className="post-footer-link" onClick={() => navigate("/posts/" + p.id)}>
                     View post →
                   </span>

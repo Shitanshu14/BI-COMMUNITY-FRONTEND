@@ -1,7 +1,9 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { Avatar } from "../lib/helpers.jsx";
+import { api } from "../lib/api.js";
 import SearchBar from "./SearchBar.jsx";
 
 const icons = {
@@ -44,12 +46,24 @@ const icons = {
       <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" />
     </svg>
   ),
+  saved: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17l-6-4-6 4Z" />
+    </svg>
+  ),
+  messages: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H9l-4.5 4v-4H5.5A1.5 1.5 0 0 1 4 14.5v-9Z" />
+    </svg>
+  ),
 };
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [dmUnread, setDmUnread] = useState(0);
 
   const linkClass = ({ isActive }) => "sidebar-link" + (isActive ? " active" : "");
 
@@ -57,6 +71,27 @@ export default function Sidebar() {
     await logout();
     navigate("/login");
   };
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const poll = () => {
+      api("/api/chat/dm/unread-count/")
+        .then((res) => !cancelled && setDmUnread(res.count || 0))
+        .catch(() => {});
+    };
+    poll();
+    // Cheap poll rather than a global websocket just for a badge — good
+    // enough freshness for a sidebar counter without another persistent
+    // connection running the whole time the app is open.
+    const timer = setInterval(poll, 20000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+    // Re-poll immediately whenever the person navigates (e.g. leaves a DM
+    // thread having just read it) instead of waiting up to 20s to clear.
+  }, [user, location.pathname]);
 
   if (!user) return null;
 
@@ -84,6 +119,13 @@ export default function Sidebar() {
       <nav className="sidebar-nav">
         <NavLink to="/communities" className={linkClass}>
           {icons.communities} Communities
+        </NavLink>
+        <NavLink to="/messages" className={linkClass}>
+          {icons.messages} Messages
+          {dmUnread > 0 && <span className="nav-badge">{dmUnread > 9 ? "9+" : dmUnread}</span>}
+        </NavLink>
+        <NavLink to="/saved" className={linkClass}>
+          {icons.saved} Saved
         </NavLink>
         <NavLink to="/verify" className={linkClass}>
           {icons.verify} Get verified

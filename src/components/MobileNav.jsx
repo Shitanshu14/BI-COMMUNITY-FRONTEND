@@ -30,6 +30,11 @@ const icons = {
       <path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5" />
     </svg>
   ),
+  messages: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H9l-4.5 4v-4H5.5A1.5 1.5 0 0 1 4 14.5v-9Z" />
+    </svg>
+  ),
 };
 
 export default function MobileNav() {
@@ -49,9 +54,9 @@ export default function MobileNav() {
         {icons.search}
         <span>Search</span>
       </button>
-      <NavLink to="/verify" className={linkClass}>
-        {icons.verify}
-        <span>Verify</span>
+      <NavLink to="/messages" className={linkClass}>
+        {icons.messages}
+        <span>Messages</span>
       </NavLink>
       <NavLink to="/profile" className={linkClass}>
         {icons.profile}
