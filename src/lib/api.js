@@ -1,5 +1,12 @@
-// Change this if your backend URL is ever different.
-export const API_BASE = "https://bi-community-backend.onrender.com";
+// BUG FIX: this was hardcoded to the production Render URL, so running
+// `npm run dev` locally always hit the live backend — there was no way to
+// point the frontend at `python manage.py runserver` on localhost without
+// editing this file (and risking committing that edit). Vite exposes any
+// `VITE_`-prefixed variable from a local `.env`/`.env.local` file via
+// `import.meta.env`, so set VITE_API_BASE=http://127.0.0.1:8000 in a
+// (gitignored) `.env.local` for local dev; production keeps working with
+// no env file at all, since it falls back to the same URL as before.
+export const API_BASE = import.meta.env.VITE_API_BASE || "https://bi-community-backend.onrender.com";
 export const WS_BASE = API_BASE.replace(/^http/, "ws");
 
 // Auth tokens live in httpOnly cookies set by the backend (see

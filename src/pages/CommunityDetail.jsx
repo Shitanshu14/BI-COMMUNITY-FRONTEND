@@ -26,6 +26,9 @@ export default function CommunityDetail() {
   const [pinBusy, setPinBusy] = useState(null);
   const [canModerate, setCanModerate] = useState(false);
   const [filter, setFilter] = useState("all");
+  // "recent" (default, newest first) or "trending" (engagement-ranked,
+  // last 7 days — see posts/views.py PostViewSet.get_queryset).
+  const [sortBy, setSortBy] = useState("recent");
 
   const toggleJoin = async () => {
     if (!community) return;
@@ -42,11 +45,13 @@ export default function CommunityDetail() {
     }
   };
 
-  const load = async () => {
+  const load = async (sort = sortBy) => {
     try {
+      const postsUrl =
+        "/api/posts/?community=" + id + (sort === "trending" ? "&sort=trending" : "");
       const [c, p] = await Promise.all([
         api("/api/communities/" + id + "/"),
-        api("/api/posts/?community=" + id),
+        api(postsUrl),
       ]);
       setCommunity(c);
       setPosts(Array.isArray(p) ? p : p.results || []);
@@ -56,9 +61,9 @@ export default function CommunityDetail() {
   };
 
   useEffect(() => {
-    load();
+    load(sortBy);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, sortBy]);
 
   useEffect(() => {
     if (!user) return;
@@ -350,20 +355,35 @@ export default function CommunityDetail() {
           )}
 
           {posts !== null && posts.length > 0 && (
-            <div className="filter-tabs">
-              {FILTER_TABS.map((t) => {
-                const count = t.value === "all" ? posts.length : posts.filter((p) => groupOf(p.post_type) === t.value).length;
-                return (
-                  <button
-                    type="button"
-                    key={t.value}
-                    className={"filter-tab" + (filter === t.value ? " active" : "")}
-                    onClick={() => setFilter(t.value)}
-                  >
-                    {t.label} <span className="filter-tab-count">{count}</span>
-                  </button>
-                );
-              })}
+            <div className="filter-tabs" style={{ justifyContent: "space-between" }}>
+              <div style={{ display: "flex", flexWrap: "wrap" }}>
+                {FILTER_TABS.map((t) => {
+                  const count = t.value === "all" ? posts.length : posts.filter((p) => groupOf(p.post_type) === t.value).length;
+                  return (
+                    <button
+                      type="button"
+                      key={t.value}
+                      className={"filter-tab" + (filter === t.value ? " active" : "")}
+                      onClick={() => setFilter(t.value)}
+                    >
+                      {t.label} <span className="filter-tab-count">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Trending: re-fetches from the server ranked by recent
+                  engagement instead of newest-first (see load()/sortBy).
+                  Kept separate from the type tabs above since it's a sort
+                  order, not a filter — the two combine (e.g. Trending +
+                  Questions shows the hottest questions). */}
+              <button
+                type="button"
+                className={"filter-tab" + (sortBy === "trending" ? " active" : "")}
+                onClick={() => setSortBy(sortBy === "trending" ? "recent" : "trending")}
+                title="Rank posts by likes + comments from the last 7 days"
+              >
+                🔥 Trending
+              </button>
             </div>
           )}
 
