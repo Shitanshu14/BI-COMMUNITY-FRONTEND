@@ -13,13 +13,27 @@ export default function Landing() {
         BiCommunity is where communities ask questions, share knowledge, ship projects and earn
         verified badges that actually mean something.
       </p>
-      <button
-        className="btn btn-primary"
-        style={{ padding: "12px 26px", fontSize: 14.5 }}
-        onClick={() => navigate(user ? "/communities" : "/register")}
-      >
-        {user ? "Go to communities" : "Get started"}
-      </button>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <button
+          className="btn btn-primary"
+          style={{ padding: "12px 26px", fontSize: 14.5 }}
+          onClick={() => navigate(user ? "/communities" : "/register")}
+        >
+          {user ? "Go to communities" : "Get started"}
+        </button>
+        <button
+          className="btn btn-ghost"
+          style={{
+            padding: "12px 26px",
+            fontSize: 14.5,
+            border: "1px solid var(--primary)",
+            color: "var(--primary)",
+          }}
+          onClick={() => navigate("/download")}
+        >
+          Download for Android
+        </button>
+      </div>
     </div>
   );
 }
