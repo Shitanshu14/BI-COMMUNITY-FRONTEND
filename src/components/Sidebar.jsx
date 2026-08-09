@@ -21,6 +21,12 @@ const icons = {
       <path d="M15.2 13.7c2.9.3 4.8 2.2 4.8 5.3" />
     </svg>
   ),
+  circles: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="3.2" />
+    </svg>
+  ),
   verify: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="m9 12 2 2 4-4" />
@@ -119,6 +125,9 @@ export default function Sidebar() {
       <nav className="sidebar-nav">
         <NavLink to="/communities" className={linkClass}>
           {icons.communities} Communities
+        </NavLink>
+        <NavLink to="/circles" className={linkClass}>
+          {icons.circles} Circles
         </NavLink>
         <NavLink to="/messages" className={linkClass}>
           {icons.messages} Messages

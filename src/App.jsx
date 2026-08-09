@@ -5,11 +5,12 @@ import MobileNav from "./components/MobileNav.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 import Landing from "./pages/Landing.jsx";
-import Download from "./pages/Download.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Communities from "./pages/Communities.jsx";
 import CommunityDetail from "./pages/CommunityDetail.jsx";
+import Circles from "./pages/Circles.jsx";
+import CircleDetail from "./pages/CircleDetail.jsx";
 import PostDetail from "./pages/PostDetail.jsx";
 import Chat from "./pages/Chat.jsx";
 import Profile from "./pages/Profile.jsx";
@@ -24,7 +25,6 @@ function Routing() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/download" element={<Download />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route
@@ -40,6 +40,22 @@ function Routing() {
         element={
           <RequireAuth>
             <CommunityDetail />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/circles"
+        element={
+          <RequireAuth>
+            <Circles />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/circles/:id"
+        element={
+          <RequireAuth>
+            <CircleDetail />
           </RequireAuth>
         }
       />
