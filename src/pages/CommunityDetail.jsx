@@ -420,6 +420,11 @@ export default function CommunityDetail() {
                     {p.is_pinned && <span className="badge badge-verified">📌 Pinned</span>}
                     <span className="badge badge-type">{typeIcon(p.post_type)} {groupLabel(p.post_type)}</span>
                     {subtypeLabel(p.post_type) && <span className="badge badge-tag">{subtypeLabel(p.post_type)}</span>}
+                    {p.post_type === "question" && (
+                      <span className={"badge " + (p.is_solved ? "badge-solved" : "badge-unsolved")}>
+                        {p.is_solved ? "✓ Solved" : "Open"}
+                      </span>
+                    )}
                     {canModerate && (
                       <button
                         type="button"
@@ -495,6 +500,7 @@ export default function CommunityDetail() {
                   >
                     {p.is_saved ? "🔖 Saved" : "🔖 Save"}
                   </button>
+                  <span className="post-footer-spacer" />
                   <span className="post-footer-link" onClick={() => navigate("/posts/" + p.id)}>
                     View post →
                   </span>

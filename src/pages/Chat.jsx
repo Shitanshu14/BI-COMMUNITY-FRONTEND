@@ -3,20 +3,37 @@ import { useParams, Link } from "react-router-dom";
 import { api, WS_BASE } from "../lib/api.js";
 import { timeAgo } from "../lib/helpers.jsx";
 
-export default function Chat() {
-  const { id: communityId } = useParams();
+// One component powers both room types — a Community's live chat and a
+// Circle's live chat — since they're identical except for the API/WS path
+// and the "join to use it" copy. `kind` picks which: "circle" or
+// "community" (default). See App.jsx for the two routes that render this
+// with different `kind`s.
+export default function Chat({ kind = "community" }) {
+  const { id: roomId } = useParams();
+  const isCircle = kind === "circle";
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("connecting");
   const [text, setText] = useState("");
   const wsRef = useRef(null);
   const logRef = useRef(null);
 
+  const historyPath = isCircle ? "/api/chat/circle/" + roomId + "/history/" : "/api/chat/" + roomId + "/history/";
+  const wsPath = isCircle ? "/ws/chat/circle/" + roomId + "/" : "/ws/chat/" + roomId + "/";
+  const backLink = isCircle ? "/circles/" + roomId : "/communities/" + roomId;
+  const backLabel = isCircle ? "← Back to circle" : "← Back to community";
+  const title = isCircle ? "Circle chat" : "Community chat";
+  const notMemberCopy = isCircle
+    ? "You need to be a member of this circle to view and send messages."
+    : "Join this community to view and send messages.";
+
   useEffect(() => {
     let cancelled = false;
+    setMessages([]);
+    setStatus("connecting");
 
     (async () => {
       try {
-        const history = await api("/api/chat/" + communityId + "/history/");
+        const history = await api(historyPath);
         const items = Array.isArray(history) ? history : history.results || [];
         if (!cancelled) setMessages(items.reverse());
       } catch (ex) {
@@ -26,7 +43,7 @@ export default function Chat() {
       }
     })();
 
-    const ws = new WebSocket(WS_BASE + "/ws/chat/" + communityId + "/");
+    const ws = new WebSocket(WS_BASE + wsPath);
     wsRef.current = ws;
     ws.onopen = () => setStatus("live");
     ws.onclose = (evt) => setStatus(evt.code === 4003 ? "not-a-member" : "down");
@@ -44,7 +61,8 @@ export default function Chat() {
       cancelled = true;
       ws.close();
     };
-  }, [communityId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, kind]);
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -59,18 +77,18 @@ export default function Chat() {
 
   return (
     <div className="page">
-      <Link className="nav-link" to={"/communities/" + communityId}>
-        ← Back to community
+      <Link className="nav-link" to={backLink}>
+        {backLabel}
       </Link>
       <div style={{ height: 14 }} />
       <div className="eyebrow">Live</div>
-      <h1>Community chat</h1>
+      <h1>{title}</h1>
 
       <div className={"chat-status " + (status === "live" ? "live" : status === "down" || status === "not-a-member" ? "down" : "")}>
         {status === "live"
           ? "● connected"
           : status === "not-a-member"
-          ? "Join this community to view and send messages."
+          ? notMemberCopy
           : status === "down"
           ? "● disconnected — messages won't send"
           : "connecting…"}

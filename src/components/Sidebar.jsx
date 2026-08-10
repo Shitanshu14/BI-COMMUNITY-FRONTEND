@@ -62,6 +62,19 @@ const icons = {
       <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H9l-4.5 4v-4H5.5A1.5 1.5 0 0 1 4 14.5v-9Z" />
     </svg>
   ),
+  bell: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 8.5a6 6 0 0 1 12 0c0 4.2 1.5 5.8 2 6.5H4c.5-.7 2-2.3 2-6.5Z" />
+      <path d="M9.5 18a2.5 2.5 0 0 0 5 0" />
+    </svg>
+  ),
+  personPlus: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20c0-4 3-6.5 6.5-6.5s6.5 2.5 6.5 6.5" />
+      <path d="M18 8.5v5M15.5 11h5" />
+    </svg>
+  ),
 };
 
 export default function Sidebar() {
@@ -70,6 +83,8 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [dmUnread, setDmUnread] = useState(0);
+  const [notifUnread, setNotifUnread] = useState(0);
+  const [followRequestCount, setFollowRequestCount] = useState(0);
 
   const linkClass = ({ isActive }) => "sidebar-link" + (isActive ? " active" : "");
 
@@ -84,6 +99,16 @@ export default function Sidebar() {
     const poll = () => {
       api("/api/chat/dm/unread-count/")
         .then((res) => !cancelled && setDmUnread(res.count || 0))
+        .catch(() => {});
+      api("/api/notifications/unread-count/")
+        .then((res) => !cancelled && setNotifUnread(res.unread_count || 0))
+        .catch(() => {});
+      api("/api/follow-requests/")
+        .then((res) => {
+          if (cancelled) return;
+          const count = Array.isArray(res) ? res.length : res.count ?? res.results?.length ?? 0;
+          setFollowRequestCount(count);
+        })
         .catch(() => {});
     };
     poll();
@@ -129,6 +154,10 @@ export default function Sidebar() {
         <NavLink to="/circles" className={linkClass}>
           {icons.circles} Circles
         </NavLink>
+        <NavLink to="/notifications" className={linkClass}>
+          {icons.bell} Notifications
+          {notifUnread > 0 && <span className="nav-badge">{notifUnread > 9 ? "9+" : notifUnread}</span>}
+        </NavLink>
         <NavLink to="/messages" className={linkClass}>
           {icons.messages} Messages
           {dmUnread > 0 && <span className="nav-badge">{dmUnread > 9 ? "9+" : dmUnread}</span>}
@@ -141,6 +170,10 @@ export default function Sidebar() {
         </NavLink>
         <NavLink to="/profile" className={linkClass}>
           {icons.profile} Profile
+        </NavLink>
+        <NavLink to="/follow-requests" className={linkClass}>
+          {icons.personPlus} Follow requests
+          {followRequestCount > 0 && <span className="nav-badge">{followRequestCount > 9 ? "9+" : followRequestCount}</span>}
         </NavLink>
         <NavLink to="/settings" className={linkClass}>
           {icons.settings} Settings

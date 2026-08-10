@@ -121,6 +121,17 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; colo
   margin: 0 auto;
   width: 100%;
 }
+/* One orchestrated fade+rise per navigation (keyed by route in App.jsx),
+   not a scattered animation on every element — deliberately subtle so it
+   reads as polish, not as "look, an animation". Respects reduced-motion. */
+.page-transition { animation: page-in 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-transition { animation: none; }
+}
 
 /* Guest (logged out) top nav */
 .guest-shell { display: flex; flex-direction: column; min-height: 100vh; }
@@ -593,8 +604,10 @@ h3 { font-size: 16px; }
 .post-footer-action.saved { color: var(--warn); }
 .post-footer-action.saved:hover { background: var(--warn-soft); }
 .post-footer-spacer { flex: 1; }
-.post-footer-link { color: var(--primary-ink); font-weight: 700; cursor: pointer; margin-left: auto; padding: 6px 10px; border-radius: 100px; }
+.post-footer-link { color: var(--primary-ink); font-weight: 700; cursor: pointer; padding: 6px 10px; border-radius: 100px; }
 .post-footer-link:hover { background: var(--primary-soft); }
+.post-footer-link.liked { color: var(--danger); }
+.post-footer-link.liked:hover { background: var(--danger-soft); }
 
 /* Rail cards */
 .rail-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; margin-bottom: 10px; }
@@ -686,6 +699,7 @@ h3 { font-size: 16px; }
 .entry-title:hover { color: var(--primary-ink); }
 .entry-body { color: var(--ink-soft); font-size: 14px; margin: 4px 0 8px; }
 .entry-meta { display: flex; gap: 12px; align-items: center; font-size: 12.5px; color: var(--ink-faint); }
+.unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
 
 /* -----------------------------------------------------------
    Badges & pills
@@ -709,6 +723,8 @@ h3 { font-size: 16px; }
   box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--primary) 60%, transparent);
 }
 .badge-tag { color: var(--ink-soft); background: var(--surface-soft); border: 1px solid var(--border); text-transform: capitalize; }
+.badge-solved { color: var(--verified); background: var(--verified-soft); }
+.badge-unsolved { color: #b8860b; background: color-mix(in srgb, #b8860b 14%, transparent); }
 
 /* -----------------------------------------------------------
    Buttons + forms
@@ -723,18 +739,25 @@ h3 { font-size: 16px; }
   background: var(--surface);
   color: var(--ink);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
 }
 .btn:hover { background: var(--surface-soft); }
-.btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-.btn-primary:hover { background: var(--primary-ink); border-color: var(--primary-ink); }
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-ink) 100%);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.btn-primary:hover { filter: brightness(1.08); border-color: var(--primary-ink); box-shadow: 0 6px 18px -8px var(--primary); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0) scale(0.97); }
 .btn-accent { background: var(--primary); color: #fff; border-color: var(--primary); }
 .btn-accent:hover { background: var(--primary-ink); border-color: var(--primary-ink); }
 .btn-ghost { border-color: transparent; background: none; padding: 8px 4px; }
 .btn-ghost:hover { background: none; color: var(--primary-ink); }
 .btn-sm { padding: 7px 13px; font-size: 12.5px; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn:disabled:hover { background: var(--surface); }
+.btn:disabled:hover { background: var(--surface); transform: none; box-shadow: none; }
 
 label {
   display: block;
@@ -900,6 +923,105 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* -----------------------------------------------------------
+   Skeleton loaders — replace flat "Loading…" text with a shimmering
+   placeholder shaped like the content it stands in for, so the page
+   doesn't visually jump once data arrives.
+   ----------------------------------------------------------- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-soft);
+  border-radius: var(--radius);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 8%, transparent), transparent);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
+
+/* -----------------------------------------------------------
+   Dashboard stat strip (Communities page) — a live, auto-computed
+   summary of the person's own activity: no numbers here are hand-set
+   copy, every one is pulled from an API response on mount.
+   ----------------------------------------------------------- */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+}
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--primary) 0%, transparent 60%);
+  opacity: 0.06;
+  pointer-events: none;
+}
+.stat-card:hover { box-shadow: var(--shadow-md); border-color: var(--primary-soft-ink); transform: translateY(-2px); }
+.stat-card-icon { font-size: 20px; margin-bottom: 10px; display: block; }
+.stat-card-value { font-family: var(--font-display); font-size: 26px; font-weight: 800; line-height: 1; }
+.stat-card-label { font-size: 12.5px; color: var(--ink-faint); margin-top: 6px; }
+
+/* -----------------------------------------------------------
+   Trending carousel (Communities dashboard) — a horizontally
+   scrolling row that also auto-advances on a timer (see
+   TrendingCarousel.jsx), pausing on hover/touch.
+   ----------------------------------------------------------- */
+.trending-track {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.trending-track::-webkit-scrollbar { display: none; }
+.trending-card {
+  scroll-snap-align: start;
+  flex: 0 0 240px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.trending-card:hover { box-shadow: var(--shadow-md); border-color: var(--primary-soft-ink); transform: translateY(-2px); }
+.trending-card-community { font-size: 11.5px; font-weight: 700; color: var(--primary-ink); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
+.trending-card-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14.5px;
+  line-height: 1.35;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.trending-dots { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
+.trending-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); cursor: pointer; transition: background 0.15s ease, width 0.15s ease; }
+.trending-dot.active { background: var(--primary); width: 16px; border-radius: 4px; }
+
 /* Landing hero */
 .hero-wrap { max-width: 620px; margin: 0 auto; padding: 90px 24px; text-align: center; }
 .hero-wrap h1 { font-size: 42px; line-height: 1.15; }
@@ -948,6 +1070,13 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   }
   .mobile-nav-link svg { width: 20px; height: 20px; }
   .mobile-nav-link.active { color: var(--primary-ink); }
+  .mobile-nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 50%;
+    margin-left: 0;
+    transform: translateX(14px);
+  }
 }
 
 /* ---------------------------------------------------------------------

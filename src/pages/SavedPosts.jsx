@@ -92,6 +92,7 @@ export default function SavedPosts() {
               <button className="post-footer-action saved" onClick={() => unsave(p.id)} disabled={saveBusy === p.id}>
                 🔖 Remove
               </button>
+              <span className="post-footer-spacer" />
               <span className="post-footer-link" onClick={() => navigate("/posts/" + p.id)}>
                 View post →
               </span>

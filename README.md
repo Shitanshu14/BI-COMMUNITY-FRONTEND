@@ -55,21 +55,37 @@ export const API_BASE = "https://bi-community-backend.onrender.com";
 
 ```
 src/
-  main.jsx              - entry point
-  App.jsx                - saare routes yahan defined hain
-  index.css              - poora design system
+  main.jsx                  - entry point (wraps App in Router/Theme/Auth providers)
+  App.jsx                   - saare routes yahan defined hain
+  index.css                 - poora design system (colors, components, animations)
   lib/
-    api.js                - backend se baat karne wala code (fetch + JWT)
-    helpers.jsx            - chhote reusable components
+    api.js                   - backend se baat karne wala code (fetch + JWT), WS_BASE bhi yahin
+    helpers.jsx               - chhote reusable components (Avatar, Skeleton, ErrorBox, VideoEmbed, timeAgo)
+    postTypes.js              - post type/icon/label lookups shared across feed pages
+    embed.js                  - YouTube/video link → embeddable URL parsing
   context/
-    AuthContext.jsx        - login/logout/register state
+    AuthContext.jsx            - login/logout/register state + current user
+    ThemeContext.jsx           - light/dark mode toggle
   components/
-    Topbar.jsx              - top navigation
-    RequireAuth.jsx         - login-required pages ko protect karta hai
+    Sidebar.jsx                 - left nav (desktop) — communities/circles/messages/settings
+    Topbar.jsx                  - top navigation on guest (logged-out) pages
+    MobileNav.jsx                - bottom nav on small screens
+    RequireAuth.jsx              - login-required pages ko protect karta hai
+    SearchBar.jsx                 - top search input + live dropdown results
   pages/
-    Landing, Login, Register, Communities, CommunityDetail,
-    PostDetail, Chat, Profile, Verify
+    Landing, Login, Register, Verify         - guest-facing
+    Communities                                - home dashboard (stats + browse/join communities)
+    CommunityDetail, PostDetail                - a community's feed + a single post/comments
+    Circles, CircleDetail                       - private invite-only groups + their chat
+    Chat                                         - live room chat, shared by community + circle (kind prop)
+    Messages, MessageThread                       - 1:1 direct messages list + a single conversation
+    Profile, Settings                              - own/other user profile, account settings
+    SavedPosts, SearchResults                       - saved-post bookmarks, global search results
 ```
+
+Naming convention: every file in `pages/` and `components/` is PascalCase
+matching its default export (`Chat.jsx` exports `Chat`); everything in
+`lib/` is a plain camelCase module, not a component.
 
 ## Backend mein bhi ek chhota sa kaam karna hoga (jab deploy karo)
 

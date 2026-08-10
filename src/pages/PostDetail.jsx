@@ -14,6 +14,30 @@ function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [showReplies, setShowReplies] = useState(depth === 0);
+  const [isLiked, setIsLiked] = useState(comment.is_liked || false);
+  const [likeCount, setLikeCount] = useState(comment.like_count || 0);
+  const [likeBusy, setLikeBusy] = useState(false);
+
+  const toggleCommentLike = async () => {
+    if (!user || likeBusy) return;
+    setLikeBusy(true);
+    // Optimistic update — a comment like is low-stakes, so we flip the UI
+    // immediately and only roll back on an actual error instead of waiting
+    // on the round trip like the higher-stakes actions elsewhere do.
+    const wasLiked = isLiked;
+    setIsLiked(!wasLiked);
+    setLikeCount((n) => n + (wasLiked ? -1 : 1));
+    try {
+      const res = await api("/api/posts/" + postId + "/comments/" + comment.id + "/like/", { method: "POST" });
+      setIsLiked(res.liked);
+      setLikeCount(res.like_count);
+    } catch {
+      setIsLiked(wasLiked);
+      setLikeCount((n) => n + (wasLiked ? 1 : -1));
+    } finally {
+      setLikeBusy(false);
+    }
+  };
 
   const submitReply = async (e) => {
     e.preventDefault();
@@ -53,6 +77,15 @@ function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
         <div className="entry-body">{comment.body}</div>
         <div className="entry-meta">
           <span>{timeAgo(comment.created_at)}</span>
+          {user && (
+            <span
+              className={"post-footer-link" + (isLiked ? " liked" : "")}
+              style={{ fontSize: 12.5, marginLeft: 0 }}
+              onClick={toggleCommentLike}
+            >
+              {isLiked ? "♥" : "♡"} {likeCount > 0 ? likeCount : ""} Like
+            </span>
+          )}
           {user && (
             <span
               className="post-footer-link"
@@ -116,6 +149,7 @@ export default function PostDetail() {
   const [copied, setCopied] = useState(false);
   const [voting, setVoting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [solveBusy, setSolveBusy] = useState(false);
 
   const loadComments = async () => {
     const c = await api("/api/posts/" + id + "/comments/");
@@ -205,6 +239,20 @@ export default function PostDetail() {
       setErr(ex.message);
     } finally {
       setPinBusy(false);
+    }
+  };
+
+  const markSolved = async () => {
+    if (solveBusy || post.is_solved) return; // already solved — no un-solve
+    setSolveBusy(true);
+    setErr("");
+    try {
+      const res = await api("/api/posts/" + id + "/mark_solved/", { method: "POST" });
+      setPost((prev) => ({ ...prev, is_solved: res.is_solved, solved_at: res.solved_at }));
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setSolveBusy(false);
     }
   };
 
@@ -300,9 +348,22 @@ export default function PostDetail() {
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <span className="badge badge-type">{typeIcon(post.post_type)} {groupLabel(post.post_type)}</span>
-            {subtypeLabel(post.post_type) && <span className="badge badge-tag">{subtypeLabel(post.post_type)}</span>}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span className="badge badge-type">{typeIcon(post.post_type)} {groupLabel(post.post_type)}</span>
+              {subtypeLabel(post.post_type) && <span className="badge badge-tag">{subtypeLabel(post.post_type)}</span>}
+              {post.post_type === "question" && post.is_solved && (
+                <span className="badge badge-solved">✓ Solved</span>
+              )}
+              {post.post_type === "question" && !post.is_solved && (
+                <span className="badge badge-unsolved">Open</span>
+              )}
+            </div>
             <div style={{ display: "flex", gap: 8 }}>
+              {post.post_type === "question" && isAuthor && !post.is_solved && (
+                <button className="btn btn-sm btn-primary" onClick={markSolved} disabled={solveBusy}>
+                  {solveBusy ? <Spinner /> : "✓ Mark solved"}
+                </button>
+              )}
               <button className="btn btn-sm" onClick={sharePost}>
                 {copied ? "Copied!" : "Share"}
               </button>

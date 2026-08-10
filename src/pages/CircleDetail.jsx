@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { ErrorBox, Avatar } from "../lib/helpers.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function CircleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: me } = useAuth();
   const [circle, setCircle] = useState(null);
   const [members, setMembers] = useState(null);
   const [err, setErr] = useState("");
@@ -104,15 +106,20 @@ export default function CircleDetail() {
           <h1>{circle.name}</h1>
           {circle.description && <p style={{ color: "var(--muted, #888)" }}>{circle.description}</p>}
         </div>
-        {circle.is_owner ? (
-          <button className="btn" onClick={deleteCircle} disabled={busy}>
-            Delete circle
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn btn-primary" onClick={() => navigate("/circles/" + id + "/chat")}>
+            💬 Open chat
           </button>
-        ) : (
-          <button className="btn" onClick={leaveCircle} disabled={busy}>
-            Leave circle
-          </button>
-        )}
+          {circle.is_owner ? (
+            <button className="btn" onClick={deleteCircle} disabled={busy}>
+              Delete circle
+            </button>
+          ) : (
+            <button className="btn" onClick={leaveCircle} disabled={busy}>
+              Leave circle
+            </button>
+          )}
+        </div>
       </div>
 
       <ErrorBox message={err} />
@@ -155,10 +162,20 @@ export default function CircleDetail() {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {(members || []).map((m) => (
           <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Avatar name={m.username} size={32} />
-            <span>{m.username}</span>
-            {m.is_verified && <span className="verified-tick" title="Verified">✓</span>}
-            {m.role === "owner" && <span className="badge badge-role">owner</span>}
+            <div
+              style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, cursor: "pointer" }}
+              onClick={() => navigate("/profile/" + m.id)}
+            >
+              <Avatar name={m.username} size={32} />
+              <span>{m.username}</span>
+              {m.is_verified && <span className="verified-tick" title="Verified">✓</span>}
+              {m.role === "owner" && <span className="badge badge-role">owner</span>}
+            </div>
+            {me && m.id !== me.id && (
+              <button className="btn btn-sm" onClick={() => navigate("/messages/" + m.id)}>
+                ✉️ Message
+              </button>
+            )}
           </div>
         ))}
       </div>

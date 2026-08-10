@@ -44,6 +44,15 @@ export function Avatar({ name, size = 40 }) {
   );
 }
 
+export function Skeleton({ width = "100%", height = 16, radius, style }) {
+  return (
+    <span
+      className="skeleton"
+      style={{ display: "block", width, height, borderRadius: radius, ...style }}
+    />
+  );
+}
+
 export function VideoEmbed({ src, provider }) {
   return (
     <div className="video-embed">

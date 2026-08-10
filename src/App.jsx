@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Topbar from "./components/Topbar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import MobileNav from "./components/MobileNav.jsx";
@@ -18,6 +18,8 @@ import Verify from "./pages/Verify.jsx";
 import SearchResults from "./pages/SearchResults.jsx";
 import Settings from "./pages/Settings.jsx";
 import SavedPosts from "./pages/SavedPosts.jsx";
+import Notifications from "./pages/Notifications.jsx";
+import FollowRequests from "./pages/FollowRequests.jsx";
 import Messages from "./pages/Messages.jsx";
 import MessageThread from "./pages/MessageThread.jsx";
 
@@ -56,6 +58,14 @@ function Routing() {
         element={
           <RequireAuth>
             <CircleDetail />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/circles/:id/chat"
+        element={
+          <RequireAuth>
+            <Chat kind="circle" />
           </RequireAuth>
         }
       />
@@ -124,6 +134,22 @@ function Routing() {
         }
       />
       <Route
+        path="/notifications"
+        element={
+          <RequireAuth>
+            <Notifications />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/follow-requests"
+        element={
+          <RequireAuth>
+            <FollowRequests />
+          </RequireAuth>
+        }
+      />
+      <Route
         path="/messages"
         element={
           <RequireAuth>
@@ -146,12 +172,13 @@ function Routing() {
 
 export default function App() {
   const { user } = useAuth();
+  const location = useLocation();
 
   if (user) {
     return (
       <div className="app-shell app-layout">
         <Sidebar />
-        <div className="content-area">
+        <div className="content-area page-transition" key={location.pathname}>
           <Routing />
         </div>
         <MobileNav />

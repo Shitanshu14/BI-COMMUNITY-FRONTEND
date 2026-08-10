@@ -323,6 +323,7 @@ export default function Profile() {
                   <div className="profile-post-tile-overlay">
                     <span>♥ {p.like_count || 0}</span>
                     <span>💬 {p.comment_count || 0}</span>
+                    {p.post_type === "question" && p.is_solved && <span>✓ Solved</span>}
                   </div>
                 </div>
               ))}
