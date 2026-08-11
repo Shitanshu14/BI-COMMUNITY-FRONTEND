@@ -11,6 +11,8 @@ import Communities from "./pages/Communities.jsx";
 import CommunityDetail from "./pages/CommunityDetail.jsx";
 import Circles from "./pages/Circles.jsx";
 import CircleDetail from "./pages/CircleDetail.jsx";
+import CircleQA from "./pages/CircleQA.jsx";
+import CircleQuestionDetail from "./pages/CircleQuestionDetail.jsx";
 import PostDetail from "./pages/PostDetail.jsx";
 import Chat from "./pages/Chat.jsx";
 import Profile from "./pages/Profile.jsx";
@@ -66,6 +68,22 @@ function Routing() {
         element={
           <RequireAuth>
             <Chat kind="circle" />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/circles/:id/qa"
+        element={
+          <RequireAuth>
+            <CircleQA />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/circles/:id/qa/:qid"
+        element={
+          <RequireAuth>
+            <CircleQuestionDetail />
           </RequireAuth>
         }
       />

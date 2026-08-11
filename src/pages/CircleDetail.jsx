@@ -107,8 +107,11 @@ export default function CircleDetail() {
           {circle.description && <p style={{ color: "var(--muted, #888)" }}>{circle.description}</p>}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn btn-primary" onClick={() => navigate("/circles/" + id + "/chat")}>
-            💬 Open chat
+          <button className="btn btn-primary" onClick={() => navigate("/circles/" + id + "/qa")}>
+            ❓ Q&amp;A
+          </button>
+          <button className="btn" onClick={() => navigate("/circles/" + id + "/chat")}>
+            💬 Live chat
           </button>
           {circle.is_owner ? (
             <button className="btn" onClick={deleteCircle} disabled={busy}>

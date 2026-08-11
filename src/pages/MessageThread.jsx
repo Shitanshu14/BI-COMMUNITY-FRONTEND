@@ -132,17 +132,19 @@ export default function MessageThread() {
         {messages.map((m, i) => {
           const mine = senderId(m) === user.id;
           return (
-            <div className="chat-msg" key={m.id || i}>
-              <span className="who">
-                {(m.sender && (m.sender.username || m.sender)) || m.sender_username || "someone"}
-              </span>
-              <span>{m.message || m.body || m.text}</span>
-              {m.created_at && <span className="when">{timeAgo(m.created_at)}</span>}
-              {mine && (
-                <span className={"read-tick" + (m.read_at ? " read" : "")} title={m.read_at ? "Read" : "Sent"}>
-                  {m.read_at ? "✓✓" : "✓"}
-                </span>
-              )}
+            <div className={"bubble-row " + (mine ? "mine" : "theirs")} key={m.id || i}>
+              {!mine && <Avatar name={otherUser?.username || "member"} size={26} />}
+              <div style={{ marginLeft: mine ? 0 : 8 }}>
+                <div className="bubble">{m.message || m.body || m.text}</div>
+                <div className="bubble-meta">
+                  {m.created_at && <span>{timeAgo(m.created_at)}</span>}
+                  {mine && (
+                    <span className={"read-tick" + (m.read_at ? " read" : "")} title={m.read_at ? "Read" : "Sent"}>
+                      {m.read_at ? "✓✓" : "✓"}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           );
         })}

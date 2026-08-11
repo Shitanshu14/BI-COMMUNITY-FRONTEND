@@ -2,8 +2,149 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../lib/api.js";
-import { RoleBadge, timeAgo, Avatar, ErrorBox, Spinner } from "../lib/helpers.jsx";
-import { typeIcon } from "../lib/postTypes.js";
+import { RoleBadge, timeAgo, Avatar, ErrorBox, Spinner, VideoEmbed } from "../lib/helpers.jsx";
+import { typeIcon, groupLabel, subtypeLabel } from "../lib/postTypes.js";
+import { extractVideoEmbed } from "../lib/embed.js";
+
+/** "Saved" used to be its own sidebar page — now it's a tab on your own
+ * profile, right next to Posts, so everything about you lives in one place. */
+function SavedTab() {
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState(null);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api("/api/posts/?saved=true")
+      .then((res) => !cancelled && setPosts(Array.isArray(res) ? res : res.results || []))
+      .catch((ex) => !cancelled && setErr(ex.message));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const unsave = async (postId) => {
+    setBusy(postId);
+    try {
+      await api("/api/posts/" + postId + "/save/", { method: "POST" });
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <>
+      <ErrorBox message={err} />
+      {posts === null && <div className="empty-state">Loading…</div>}
+      {posts !== null && posts.length === 0 && (
+        <div className="empty-state">Nothing saved yet. Tap 🔖 Save on any post to keep it here.</div>
+      )}
+      {posts &&
+        posts.map((p) => (
+          <div className="post-card post-card-compact" key={p.id}>
+            <div className="post-head">
+              <Avatar name={p.author?.username || "member"} size={32} />
+              <div className="post-head-meta">
+                <div className="post-author" onClick={() => p.author?.id && navigate("/profile/" + p.author.id)} style={{ cursor: "pointer" }}>
+                  {p.author?.username || "Member"}
+                  {p.author?.is_verified && <span className="verified-tick">✓</span>}
+                </div>
+                <div className="post-sub">{timeAgo(p.created_at)}</div>
+              </div>
+              <span className="badge badge-type">{typeIcon(p.post_type)} {groupLabel(p.post_type)}</span>
+            </div>
+            <div className="post-title" onClick={() => navigate("/posts/" + p.id)}>{p.title}</div>
+            <p className="post-body">{p.body}</p>
+            {p.image && <img src={p.image} alt="" className="post-image" />}
+            {(() => {
+              const embed = extractVideoEmbed(p.body);
+              return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;
+            })()}
+            <div className="post-footer">
+              <button className="post-footer-action saved" onClick={() => unsave(p.id)} disabled={busy === p.id}>
+                🔖 Remove
+              </button>
+              <span className="post-footer-spacer" />
+              <span className="post-footer-link" onClick={() => navigate("/posts/" + p.id)}>View post →</span>
+            </div>
+          </div>
+        ))}
+    </>
+  );
+}
+
+/** "Get verified" used to be its own sidebar page — now a tab on your own
+ * profile: request form + status history, side by side. */
+function VerifyTab({ verif, onFiled }) {
+  const [form, setForm] = useState({ proof_type: "student_id", note: "" });
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr("");
+    setMsg("");
+    try {
+      await api("/api/verification/request/", { method: "POST", body: form });
+      setMsg("Request filed. We'll review it soon.");
+      setForm({ proof_type: "student_id", note: "" });
+      onFiled?.();
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="verify-tab-grid">
+      <form onSubmit={submit} className="card">
+        <div className="eyebrow" style={{ marginBottom: 4 }}>Get your badge</div>
+        <p className="subtle" style={{ marginTop: 0 }}>Verified members carry a mark of trust across every community.</p>
+        <ErrorBox message={err} />
+        {msg && <div className="chat-status live" style={{ marginBottom: 14 }}>{msg}</div>}
+        <label>Proof type</label>
+        <select value={form.proof_type} onChange={set("proof_type")}>
+          <option value="student_id">Student ID</option>
+          <option value="employee_id">Employee ID</option>
+          <option value="certificate">Certificate</option>
+          <option value="other">Other</option>
+        </select>
+        <label>Note</label>
+        <textarea value={form.note} onChange={set("note")} placeholder="Anything reviewers should know" />
+        <button className="btn btn-primary" disabled={busy} style={{ width: "100%" }}>
+          {busy ? <Spinner /> : "Submit request"}
+        </button>
+      </form>
+
+      <div>
+        <h3 style={{ marginTop: 0 }}>History</h3>
+        {verif === null && <div className="empty-state">Loading…</div>}
+        {verif && verif.length === 0 && <div className="empty-state">No verification requests filed yet.</div>}
+        {verif &&
+          verif.map((v) => (
+            <div className="entry" key={v.id}>
+              <div className="entry-head">
+                <span className="entry-title">{v.proof_type}</span>
+              </div>
+              <div className="entry-meta">
+                <span className={"badge " + (v.status === "approved" ? "badge-solved" : v.status === "rejected" ? "badge-unsolved" : "badge-role")}>{v.status}</span>
+                <span>{timeAgo(v.created_at)}</span>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
 
 function FollowListModal({ userId, kind, onClose }) {
   // kind: "followers" | "following"
@@ -224,9 +365,11 @@ export default function Profile() {
             <button className="btn" onClick={() => setEditing((v) => !v)}>
               {editing ? "Cancel" : "Edit profile"}
             </button>
-            <button className="btn" onClick={() => navigate("/verify")}>
-              Get verified
-            </button>
+            {!profile.is_verified && (
+              <button className="btn" onClick={() => setTab("verify")}>
+                ✓ Get verified
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -300,6 +443,16 @@ export default function Profile() {
         <button className={"pill-btn" + (tab === "communities" ? " active" : "")} onClick={() => setTab("communities")}>
           👥 Communities
         </button>
+        {isOwnProfile && (
+          <button className={"pill-btn" + (tab === "saved" ? " active" : "")} onClick={() => setTab("saved")}>
+            🔖 Saved
+          </button>
+        )}
+        {isOwnProfile && (
+          <button className={"pill-btn" + (tab === "verify" ? " active" : "")} onClick={() => setTab("verify")}>
+            ✓ Verification
+          </button>
+        )}
       </div>
 
       {tab === "posts" && (
@@ -349,25 +502,17 @@ export default function Profile() {
         </>
       )}
 
-      {isOwnProfile && (
-        <>
-          <div style={{ height: 30 }} />
-          <h2>Verification history</h2>
-          {verif === null && <div className="empty-state">Loading…</div>}
-          {verif && verif.length === 0 && <div className="empty-state">No verification requests filed yet.</div>}
-          {verif &&
-            verif.map((v) => (
-              <div className="entry" key={v.id}>
-                <div className="entry-head">
-                  <span className="entry-title">{v.proof_type}</span>
-                </div>
-                <div className="entry-meta">
-                  <span className="badge badge-role">{v.status}</span>
-                  <span>{timeAgo(v.created_at)}</span>
-                </div>
-              </div>
-            ))}
-        </>
+      {isOwnProfile && tab === "saved" && <SavedTab />}
+
+      {isOwnProfile && tab === "verify" && (
+        <VerifyTab
+          verif={verif}
+          onFiled={() => {
+            api("/api/verification/me/")
+              .then((v) => setVerif(Array.isArray(v) ? v : v.results || []))
+              .catch(() => {});
+          }}
+        />
       )}
     </div>
   );

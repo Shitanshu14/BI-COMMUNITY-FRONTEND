@@ -128,9 +128,20 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <NavLink to="/communities" className="sidebar-brand">
-        BiCommunity<span className="dot">.</span>
-      </NavLink>
+      <div className="sidebar-topline">
+        <NavLink to="/communities" className="sidebar-brand">
+          BiCommunity<span className="dot">.</span>
+        </NavLink>
+        <button
+          type="button"
+          className="bell-btn"
+          title="Notifications"
+          onClick={() => navigate("/notifications")}
+        >
+          {icons.bell}
+          {notifUnread > 0 && <span className="bell-dot">{notifUnread > 9 ? "9+" : notifUnread}</span>}
+        </button>
+      </div>
 
       <div className="sidebar-user" onClick={() => navigate("/profile")}>
         <Avatar name={user.username} size={36} />
@@ -154,19 +165,9 @@ export default function Sidebar() {
         <NavLink to="/circles" className={linkClass}>
           {icons.circles} Circles
         </NavLink>
-        <NavLink to="/notifications" className={linkClass}>
-          {icons.bell} Notifications
-          {notifUnread > 0 && <span className="nav-badge">{notifUnread > 9 ? "9+" : notifUnread}</span>}
-        </NavLink>
         <NavLink to="/messages" className={linkClass}>
           {icons.messages} Messages
           {dmUnread > 0 && <span className="nav-badge">{dmUnread > 9 ? "9+" : dmUnread}</span>}
-        </NavLink>
-        <NavLink to="/saved" className={linkClass}>
-          {icons.saved} Saved
-        </NavLink>
-        <NavLink to="/verify" className={linkClass}>
-          {icons.verify} Get verified
         </NavLink>
         <NavLink to="/profile" className={linkClass}>
           {icons.profile} Profile

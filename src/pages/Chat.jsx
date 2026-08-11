@@ -1,7 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { api, WS_BASE } from "../lib/api.js";
-import { timeAgo } from "../lib/helpers.jsx";
+import { timeAgo, Avatar } from "../lib/helpers.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+
+function senderName(m) {
+  return (m.sender && (m.sender.username || m.sender)) || m.sender_username || "someone";
+}
+function senderId(m) {
+  return m.sender_id || (m.sender && m.sender.id);
+}
 
 // One component powers both room types — a Community's live chat and a
 // Circle's live chat — since they're identical except for the API/WS path
@@ -10,10 +18,13 @@ import { timeAgo } from "../lib/helpers.jsx";
 // with different `kind`s.
 export default function Chat({ kind = "community" }) {
   const { id: roomId } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const isCircle = kind === "circle";
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("connecting");
   const [text, setText] = useState("");
+  const [roomName, setRoomName] = useState("");
   const wsRef = useRef(null);
   const logRef = useRef(null);
 
@@ -21,7 +32,9 @@ export default function Chat({ kind = "community" }) {
   const wsPath = isCircle ? "/ws/chat/circle/" + roomId + "/" : "/ws/chat/" + roomId + "/";
   const backLink = isCircle ? "/circles/" + roomId : "/communities/" + roomId;
   const backLabel = isCircle ? "← Back to circle" : "← Back to community";
-  const title = isCircle ? "Circle chat" : "Community chat";
+  // Real circle/community name once loaded, so the header doesn't just
+  // say the same generic "Circle chat" for every circle.
+  const title = roomName || (isCircle ? "Circle chat" : "Community chat");
   const notMemberCopy = isCircle
     ? "You need to be a member of this circle to view and send messages."
     : "Join this community to view and send messages.";
@@ -30,6 +43,12 @@ export default function Chat({ kind = "community" }) {
     let cancelled = false;
     setMessages([]);
     setStatus("connecting");
+    setRoomName("");
+
+    const roomPath = isCircle ? "/api/circles/" + roomId + "/" : "/api/communities/" + roomId + "/";
+    api(roomPath)
+      .then((r) => !cancelled && setRoomName(r.name || ""))
+      .catch(() => {});
 
     (async () => {
       try {
@@ -98,15 +117,28 @@ export default function Chat({ kind = "community" }) {
         {status !== "not-a-member" && messages.length === 0 && (
           <div className="empty-state">No messages yet. Say hello.</div>
         )}
-        {messages.map((m, i) => (
-          <div className="chat-msg" key={m.id || i}>
-            <span className="who">
-              {(m.sender && (m.sender.username || m.sender)) || m.sender_username || "someone"}
-            </span>
-            <span>{m.message || m.body || m.text}</span>
-            {m.created_at && <span className="when">{timeAgo(m.created_at)}</span>}
-          </div>
-        ))}
+        {messages.map((m, i) => {
+          const mine = senderId(m) === user?.id;
+          const name = senderName(m);
+          const prevMine = i > 0 ? senderId(messages[i - 1]) === user?.id : null;
+          const showName = !mine && prevMine !== false;
+          return (
+            <div key={m.id || i}>
+              {showName && <div className="bubble-who">{name}</div>}
+              <div className={"bubble-row " + (mine ? "mine" : "theirs")}>
+                {!mine && <Avatar name={name} size={26} />}
+                <div style={{ marginLeft: mine ? 0 : 8 }}>
+                  <div className="bubble">{m.message || m.body || m.text}</div>
+                  {m.created_at && (
+                    <div className="bubble-meta">
+                      <span>{timeAgo(m.created_at)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {status !== "not-a-member" && (
