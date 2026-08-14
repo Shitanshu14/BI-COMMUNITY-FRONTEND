@@ -342,7 +342,7 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; colo
   padding: 0;
   flex-shrink: 0;
 }
-.theme-switch.on { background: var(--primary); border-color: var(--primary); }
+.theme-switch.on { background: var(--accent-gradient); border-color: transparent; box-shadow: var(--glow-primary-soft); }
 .theme-switch-knob {
   position: absolute;
   top: 2px;
@@ -771,8 +771,9 @@ h3 { font-size: 16px; }
   padding: 10px 8px;
   border-radius: var(--radius);
   cursor: pointer;
+  transition: background 0.15s ease;
 }
-.user-row:hover { background: var(--surface-soft); }
+.user-row:hover { background: var(--accent-gradient-soft); }
 .user-row-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 5px; }
 .user-row-sub { font-size: 12px; color: var(--ink-faint); }
 .user-row-meta { flex: 1; min-width: 0; }
@@ -787,6 +788,7 @@ h3 { font-size: 16px; }
   flex-shrink: 0;
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px color-mix(in srgb, var(--primary) 22%, var(--border-soft));
 }
+.avatar-img { object-fit: cover; }
 
 /* -----------------------------------------------------------
    Entries (generic list rows — comments, verification history)
@@ -801,7 +803,14 @@ h3 { font-size: 16px; }
 .entry-title:hover { color: var(--primary-ink); }
 .entry-body { color: var(--ink-soft); font-size: 14px; margin: 4px 0 8px; }
 .entry-meta { display: flex; gap: 12px; align-items: center; font-size: 12.5px; color: var(--ink-faint); }
-.unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  flex-shrink: 0;
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--primary) 55%, transparent);
+}
 
 /* -----------------------------------------------------------
    Badges & pills
@@ -827,6 +836,157 @@ h3 { font-size: 16px; }
 .badge-tag { color: var(--ink-soft); background: var(--surface-soft); border: 1px solid var(--border); text-transform: capitalize; }
 .badge-solved { color: var(--verified); background: var(--verified-soft); }
 .badge-unsolved { color: #b8860b; background: color-mix(in srgb, #b8860b 14%, transparent); }
+
+/* -----------------------------------------------------------
+   Post type extras — Knowledge read-time, Resource link card,
+   Project link pills. Gives each post subtype a distinct feel
+   without needing a completely separate page template.
+   ----------------------------------------------------------- */
+.post-extras { margin-top: 10px; }
+.read-time-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary-ink);
+  background: var(--accent-gradient-soft);
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
+  padding: 4px 11px;
+  border-radius: 100px;
+}
+.resource-link-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+.resource-link-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  box-shadow: var(--glow-primary-soft);
+  transform: translateY(-1px);
+}
+.resource-link-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--accent-gradient);
+  font-size: 15px;
+}
+.resource-link-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.resource-link-label { font-weight: 700; font-size: 13.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resource-link-domain { font-size: 12px; color: var(--ink-faint); }
+.resource-link-go { flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: var(--primary-ink); }
+.post-extras-project { display: flex; flex-wrap: wrap; gap: 8px; }
+.project-link-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 100px;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.project-link-pill:hover {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  box-shadow: var(--glow-primary-soft);
+  color: var(--primary-ink);
+}
+
+/* -----------------------------------------------------------
+   Circle events
+   ----------------------------------------------------------- */
+.event-list { display: flex; flex-direction: column; gap: 12px; }
+.event-list-past { opacity: 0.6; }
+.event-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  position: relative;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+.event-card:not(.event-card-past):hover {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  box-shadow: var(--shadow-md), var(--glow-primary-soft);
+  transform: translateY(-1px);
+}
+.event-card-date {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--accent-gradient);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+.event-card-day { font-size: 20px; font-weight: 800; }
+.event-card-month { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.event-card-main { flex: 1; min-width: 0; }
+.event-card-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.event-card-meta { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; }
+.event-card-desc { font-size: 13px; color: var(--ink-soft); margin-bottom: 10px; white-space: pre-wrap; }
+.event-card-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.event-card-going { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-faint); }
+.event-rsvp-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.event-card-delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.event-card-delete:hover { color: var(--danger); background: var(--danger-soft); }
+
+/* -----------------------------------------------------------
+   Profile — avatar upload + character counters
+   ----------------------------------------------------------- */
+.char-count { font-size: 11.5px; font-weight: 600; color: var(--ink-faint); float: right; }
+.profile-avatar-wrap { position: relative; flex-shrink: 0; width: 72px; height: 72px; }
+.profile-avatar-edit {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px var(--surface), var(--glow-primary-soft);
+  transition: transform 0.12s ease;
+}
+.profile-avatar-edit:hover { transform: scale(1.08); }
 
 /* -----------------------------------------------------------
    Buttons + forms

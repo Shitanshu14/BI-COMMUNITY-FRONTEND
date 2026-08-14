@@ -5,6 +5,7 @@ import { Spinner, ErrorBox, timeAgo, Avatar, VideoEmbed } from "../lib/helpers.j
 import { useAuth } from "../context/AuthContext.jsx";
 import { typeIcon, subtypeLabel, groupLabel } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
+import PostExtras from "../components/PostExtras.jsx";
 
 function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
   const { user } = useAuth();
@@ -126,6 +127,55 @@ function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
         replies.map((r) => (
           <CommentThread key={r.id} comment={r} postId={postId} onReplyAdded={onReplyAdded} depth={depth + 1} />
         ))}
+    </div>
+  );
+}
+
+function AnswerRow({ comment, postId }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isLiked, setIsLiked] = useState(comment.is_liked || false);
+  const [likeCount, setLikeCount] = useState(comment.like_count || 0);
+  const [likeBusy, setLikeBusy] = useState(false);
+
+  const toggleLike = async () => {
+    if (!user || likeBusy) return;
+    setLikeBusy(true);
+    const wasLiked = isLiked;
+    setIsLiked(!wasLiked);
+    setLikeCount((n) => n + (wasLiked ? -1 : 1));
+    try {
+      const res = await api("/api/posts/" + postId + "/comments/" + comment.id + "/like/", { method: "POST" });
+      setIsLiked(res.liked);
+      setLikeCount(res.like_count);
+    } catch {
+      setIsLiked(wasLiked);
+      setLikeCount((n) => n + (wasLiked ? 1 : -1));
+    } finally {
+      setLikeBusy(false);
+    }
+  };
+
+  return (
+    <div className="entry" style={{ paddingLeft: 0 }}>
+      <div className="entry-head" style={{ marginBottom: 2 }}>
+        <span
+          style={{ fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+          onClick={() => comment.author?.id && navigate("/profile/" + comment.author.id)}
+        >
+          {comment.author?.username || "Member"}
+          {comment.author?.is_verified && <span className="verified-tick">✓</span>}
+        </span>
+      </div>
+      <div className="entry-body">{comment.body}</div>
+      <div className="entry-meta">
+        <span>{timeAgo(comment.created_at)}</span>
+        {user && (
+          <span className={"post-footer-link" + (isLiked ? " liked" : "")} style={{ fontSize: 12.5, marginLeft: 0 }} onClick={toggleLike}>
+            {isLiked ? "♥" : "♡"} {likeCount > 0 ? likeCount : ""} Like
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -332,7 +382,7 @@ export default function PostDetail() {
               style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, cursor: "pointer" }}
               onClick={() => post.author?.id && navigate("/profile/" + post.author.id)}
             >
-              <Avatar name={post.author?.username || "member"} size={38} />
+              <Avatar name={post.author?.username || "member"} src={post.author?.avatar} size={38} />
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 5 }}>
                   {post.author?.username || "Member"}
@@ -349,8 +399,8 @@ export default function PostDetail() {
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span className="badge badge-type">{typeIcon(post.post_type)} {groupLabel(post.post_type)}</span>
-              {subtypeLabel(post.post_type) && <span className="badge badge-tag">{subtypeLabel(post.post_type)}</span>}
+              <span className="badge badge-type">{typeIcon(post)} {groupLabel(post)}</span>
+              {subtypeLabel(post) && <span className="badge badge-tag">{subtypeLabel(post)}</span>}
               {post.post_type === "question" && post.is_solved && (
                 <span className="badge badge-solved">✓ Solved</span>
               )}
@@ -413,9 +463,10 @@ export default function PostDetail() {
             <>
               <h1 style={{ marginTop: 10 }}>{post.title}</h1>
               <p style={{ color: "var(--ink-soft)" }}>{post.body}</p>
+              <PostExtras post={post} />
             </>
           )}
-          {post.image && <img src={post.image} alt="" className="post-image" />}
+          {post.image && <img src={post.image} alt="" className="post-image" loading="lazy" decoding="async" />}
           {(() => {
             const embed = extractVideoEmbed(post.body);
             return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;
@@ -462,23 +513,29 @@ export default function PostDetail() {
       )}
 
       <div style={{ height: 30 }} />
-      <h2>Comments</h2>
+      <h2>{post?.post_type === "question" ? "Answers" : "Comments"}</h2>
       <form onSubmit={addComment} style={{ marginBottom: 20 }}>
         <textarea
           value={commentBody}
           onChange={(e) => setCommentBody(e.target.value)}
-          placeholder="Write a comment…"
+          placeholder={post?.post_type === "question" ? "Share what you know…" : "Write a comment…"}
           style={{ marginBottom: 8 }}
         />
         <button className="btn btn-primary btn-sm" disabled={busy}>
-          {busy ? <Spinner /> : "Add comment"}
+          {busy ? <Spinner /> : post?.post_type === "question" ? "Post answer" : "Add comment"}
         </button>
       </form>
 
       {comments !== null && comments.length === 0 && (
-        <div className="empty-state">No comments yet.</div>
+        <div className="empty-state">{post?.post_type === "question" ? "No answers yet. Be the first to help out." : "No comments yet."}</div>
       )}
-      {comments &&
+      {comments && post?.post_type === "question" &&
+        comments.map((c) => (
+          <div className="card" style={{ marginBottom: 12 }} key={c.id}>
+            <AnswerRow comment={c} postId={id} />
+          </div>
+        ))}
+      {comments && post?.post_type !== "question" &&
         comments.map((c) => (
           <CommentThread key={c.id} comment={c} postId={id} onReplyAdded={loadComments} />
         ))}

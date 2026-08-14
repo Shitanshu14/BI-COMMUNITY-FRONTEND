@@ -94,7 +94,7 @@ export default function CircleQuestionDetail() {
         </div>
         {question.body && <p className="post-body">{question.body}</p>}
         <div className="qa-row-meta">
-          <Avatar name={question.author?.username} size={22} />
+          <Avatar name={question.author?.username} src={question.author?.avatar} size={22} />
           <span>{question.author?.username}</span>
           <span>·</span>
           <span>{timeAgo(question.created_at)}</span>
@@ -113,7 +113,7 @@ export default function CircleQuestionDetail() {
           <p className="post-body" style={{ marginTop: a.is_accepted ? 6 : 0 }}>{a.body}</p>
           <div className="qa-row-meta" style={{ justifyContent: "space-between" }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Avatar name={a.author?.username} size={20} />
+              <Avatar name={a.author?.username} src={a.author?.avatar} size={20} />
               {a.author?.username}
               <span>·</span>
               {timeAgo(a.created_at)}

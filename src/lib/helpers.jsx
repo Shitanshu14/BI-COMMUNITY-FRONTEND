@@ -24,7 +24,11 @@ export function RoleBadge({ role, isVerified }) {
   );
 }
 
-const AVATAR_COLORS = ["#4f5bf0", "#7c5cf0", "#2fa4c9", "#e0765a", "#16a34a", "#c9548a"];
+// Vibrant palette that harmonizes with the app's purple → pink → orange
+// accent gradient, instead of the old muted/desaturated set — so a plain
+// initials-avatar still feels part of the same "advanced" color language
+// as the gradient buttons/badges elsewhere.
+const AVATAR_COLORS = ["#7c5cff", "#ff4fa3", "#ff9d4d", "#3ddc97", "#4fc3f7", "#c46bff"];
 
 function colorFor(seed) {
   let hash = 0;
@@ -32,8 +36,18 @@ function colorFor(seed) {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-export function Avatar({ name, size = 40 }) {
+export function Avatar({ name, src, size = 40 }) {
   const initial = (name || "?").trim().charAt(0).toUpperCase();
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name || "avatar"}
+        className="avatar avatar-img"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
     <span
       className="avatar"

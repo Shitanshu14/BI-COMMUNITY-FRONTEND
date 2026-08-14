@@ -85,7 +85,7 @@ export default function Messages() {
               results &&
               results.map((u) => (
                 <div key={u.id} className="search-result-row" onClick={() => openThreadWith(u.id)}>
-                  <Avatar name={u.username} size={28} />
+                  <Avatar name={u.username} src={u.avatar} size={28} />
                   <div>
                     <div className="search-result-title">
                       {u.username}
@@ -111,7 +111,7 @@ export default function Messages() {
       {rows &&
         rows.map((r) => (
           <div className="user-row" key={r.user.id} onClick={() => navigate("/messages/" + r.user.id)}>
-            <Avatar name={r.user.username} size={44} />
+            <Avatar name={r.user.username} src={r.user.avatar} size={44} />
             <div className="user-row-meta">
               <div className="user-row-name">
                 {r.user.username}

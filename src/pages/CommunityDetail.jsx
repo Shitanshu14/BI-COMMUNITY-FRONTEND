@@ -3,8 +3,11 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Spinner, ErrorBox, timeAgo, Avatar, VideoEmbed } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel, groupLabel } from "../lib/postTypes.js";
+import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel, groupLabel, encodeLink } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
+import PostExtras from "../components/PostExtras.jsx";
+
+const EMPTY_FORM = { post_type: "question", title: "", body: "", tags: [] };
 
 export default function CommunityDetail() {
   const { id } = useParams();
@@ -14,7 +17,8 @@ export default function CommunityDetail() {
   const [posts, setPosts] = useState(null);
   const [err, setErr] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ post_type: "question", title: "", body: "" });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [linkRows, setLinkRows] = useState([{ label: "", url: "" }]);
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -96,14 +100,14 @@ export default function CommunityDetail() {
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   // Top-level pick: Question / Post / Poll. Picking "Post" doesn't force a
-  // raw type by itself — it defaults to "knowledge" unless a subtype was
+  // subtype by itself — it defaults to "Knowledge" unless a subtype was
   // already chosen, then the subtype pills (below) let the user refine it.
   const pickType = (topValue) => {
     setForm((f) => {
       if (topValue === "post") {
-        return { ...f, post_type: groupOf(f.post_type) === "post" ? f.post_type : "knowledge" };
+        return { ...f, post_type: "post", tags: groupOf(f) === "post" && f.tags?.length ? f.tags : ["Knowledge"] };
       }
-      return { ...f, post_type: topValue };
+      return { ...f, post_type: topValue, tags: [] };
     });
     setShowForm(true);
   };
@@ -125,11 +129,19 @@ export default function CommunityDetail() {
       fd.append("body", form.body);
       fd.append("community", id);
       if (image) fd.append("image", image);
+      (form.tags || []).forEach((t) => fd.append("tags", t));
       if (form.post_type === "poll") {
         pollOptions.filter((o) => o.trim()).forEach((o) => fd.append("options", o.trim()));
       }
+      // Links are only meaningful for Project/Resource posts, but sending
+      // them harmlessly no-ops for other types since the field just isn't
+      // read/rendered there.
+      linkRows
+        .filter((r) => r.url.trim())
+        .forEach((r) => fd.append("links", encodeLink(r.label, r.url)));
       await api("/api/posts/", { method: "POST", body: fd });
-      setForm({ post_type: "question", title: "", body: "" });
+      setForm(EMPTY_FORM);
+      setLinkRows([{ label: "", url: "" }]);
       setPollOptions(["", ""]);
       setImage(null);
       setImagePreview(null);
@@ -148,6 +160,13 @@ export default function CommunityDetail() {
     setPollOptions(next);
   };
   const addPollOption = () => pollOptions.length < 6 && setPollOptions([...pollOptions, ""]);
+  const setLinkRow = (i, key) => (e) => {
+    const next = [...linkRows];
+    next[i] = { ...next[i], [key]: e.target.value };
+    setLinkRows(next);
+  };
+  const addLinkRow = () => linkRows.length < 5 && setLinkRows([...linkRows, { label: "", url: "" }]);
+  const removeLinkRow = (i) => setLinkRows(linkRows.filter((_, idx) => idx !== i));
   const removePollOption = (i) => pollOptions.length > 2 && setPollOptions(pollOptions.filter((_, idx) => idx !== i));
 
   const vote = async (postId, optionId) => {
@@ -243,7 +262,7 @@ export default function CommunityDetail() {
           ) : (
             <div className="card composer">
               <div className="composer-placeholder" onClick={() => setShowForm(true)}>
-                <Avatar name={user?.username} size={34} />
+                <Avatar name={user?.username} src={user?.avatar} size={34} />
                 <span>What do you want to share?</span>
               </div>
               <div className="composer-types">
@@ -265,14 +284,15 @@ export default function CommunityDetail() {
           {showForm && community?.is_member && (
             <form onSubmit={create} className="card" style={{ marginBottom: 18 }}>
               <label>Type</label>
-              {groupOf(form.post_type) === "post" ? (
+              {form.post_type === "post" ? (
                 <div className="composer-subtypes">
                   {POST_SUBTYPES.map((s) => (
                     <button
                       type="button"
                       key={s.value}
-                      className={"pill-btn pill-btn-sm" + (form.post_type === s.value ? " active" : "")}
-                      onClick={() => setForm({ ...form, post_type: s.value })}
+                      title={s.hint}
+                      className={"pill-btn pill-btn-sm" + (form.tags?.[0] === s.value ? " active" : "")}
+                      onClick={() => setForm({ ...form, tags: [s.value] })}
                     >
                       <span>{s.icon}</span> {s.label}
                     </button>
@@ -280,13 +300,48 @@ export default function CommunityDetail() {
                 </div>
               ) : (
                 <div className="composer-fixed-type">
-                  <span>{typeIcon(form.post_type)}</span> {groupLabel(form.post_type)}
+                  <span>{typeIcon(form)}</span> {groupLabel(form)}
                 </div>
               )}
               <label>Title</label>
               <input type="text" value={form.title} onChange={set("title")} required />
               <label>Body</label>
               <textarea value={form.body} onChange={set("body")} required />
+              {(form.tags?.[0] === "Project" || form.tags?.[0] === "Resource") && (
+                <div style={{ marginBottom: 14 }}>
+                  <label>
+                    {form.tags[0] === "Project" ? "Links (live site, repo, portfolio — anything, optional)" : "Link (optional but recommended)"}
+                  </label>
+                  {linkRows.map((row, i) => (
+                    <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                      <input
+                        type="text"
+                        value={row.label}
+                        placeholder="Label (e.g. Live demo, Portfolio, Instagram)"
+                        onChange={setLinkRow(i, "label")}
+                        style={{ flex: 1 }}
+                      />
+                      <input
+                        type="text"
+                        value={row.url}
+                        placeholder="https://…"
+                        onChange={setLinkRow(i, "url")}
+                        style={{ flex: 1 }}
+                      />
+                      {linkRows.length > 1 && (
+                        <button type="button" className="btn btn-sm" onClick={() => removeLinkRow(i)}>
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {form.tags[0] === "Project" && linkRows.length < 5 && (
+                    <button type="button" className="btn btn-sm" onClick={addLinkRow}>
+                      + Add another link
+                    </button>
+                  )}
+                </div>
+              )}
               {form.post_type === "poll" && (
                 <div style={{ marginBottom: 14 }}>
                   <label>Poll options (2–6)</label>
@@ -358,7 +413,7 @@ export default function CommunityDetail() {
             <div className="filter-tabs" style={{ justifyContent: "space-between" }}>
               <div style={{ display: "flex", flexWrap: "wrap" }}>
                 {FILTER_TABS.map((t) => {
-                  const count = t.value === "all" ? posts.length : posts.filter((p) => groupOf(p.post_type) === t.value).length;
+                  const count = t.value === "all" ? posts.length : posts.filter((p) => groupOf(p) === t.value).length;
                   return (
                     <button
                       type="button"
@@ -393,7 +448,7 @@ export default function CommunityDetail() {
           )}
 
           {(() => {
-            const visible = posts ? posts.filter((p) => filter === "all" || groupOf(p.post_type) === filter) : [];
+            const visible = posts ? posts.filter((p) => filter === "all" || groupOf(p) === filter) : [];
             if (posts && posts.length > 0 && visible.length === 0) {
               return <div className="empty-state">No {filter === "all" ? "" : filter} posts here yet.</div>;
             }
@@ -404,7 +459,7 @@ export default function CommunityDetail() {
                     style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
                     onClick={() => p.author?.id && navigate("/profile/" + p.author.id)}
                   >
-                    <Avatar name={p.author?.username || "member"} size={40} />
+                    <Avatar name={p.author?.username || "member"} src={p.author?.avatar} size={40} />
                     <div className="post-head-meta">
                       <div className="post-author">
                         {p.author?.username || "Member"}
@@ -418,8 +473,8 @@ export default function CommunityDetail() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {p.is_pinned && <span className="badge badge-verified">📌 Pinned</span>}
-                    <span className="badge badge-type">{typeIcon(p.post_type)} {groupLabel(p.post_type)}</span>
-                    {subtypeLabel(p.post_type) && <span className="badge badge-tag">{subtypeLabel(p.post_type)}</span>}
+                    <span className="badge badge-type">{typeIcon(p)} {groupLabel(p)}</span>
+                    {subtypeLabel(p) && <span className="badge badge-tag">{subtypeLabel(p)}</span>}
                     {p.post_type === "question" && (
                       <span className={"badge " + (p.is_solved ? "badge-solved" : "badge-unsolved")}>
                         {p.is_solved ? "✓ Solved" : "Open"}
@@ -443,6 +498,7 @@ export default function CommunityDetail() {
                       {p.title}
                     </div>
                     <div className="post-body">{p.body}</div>
+                    <PostExtras post={p} compact />
                     {p.post_type === "poll" && p.poll_options?.length > 0 && (
                       <div className="poll-options">
                         {(() => {
@@ -473,11 +529,11 @@ export default function CommunityDetail() {
                   </div>
                   {!p.image && p.post_type !== "poll" && (
                     <div className="post-visual">
-                      <span>{typeIcon(p.post_type)}</span>
+                      <span>{typeIcon(p)}</span>
                     </div>
                   )}
                 </div>
-                {p.image && <img src={p.image} alt="" className="post-image" />}
+                {p.image && <img src={p.image} alt="" className="post-image" loading="lazy" decoding="async" />}
                 {(() => {
                   const embed = extractVideoEmbed(p.body);
                   return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;
@@ -550,7 +606,7 @@ export default function CommunityDetail() {
                   .filter((p) => p.is_pinned)
                   .map((p) => (
                     <div key={p.id} className="rail-pinned-item" onClick={() => navigate("/posts/" + p.id)}>
-                      <span>{typeIcon(p.post_type)}</span>
+                      <span>{typeIcon(p)}</span>
                       <span className="rail-pinned-title">{p.title}</span>
                     </div>
                   ))}

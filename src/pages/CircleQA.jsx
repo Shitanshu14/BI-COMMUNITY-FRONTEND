@@ -124,7 +124,7 @@ export default function CircleQA() {
                 </div>
                 {q.body && <div className="qa-row-body">{q.body}</div>}
                 <div className="qa-row-meta">
-                  <Avatar name={q.author?.username} size={20} />
+                  <Avatar name={q.author?.username} src={q.author?.avatar} size={20} />
                   <span>{q.author?.username}</span>
                   <span>·</span>
                   <span>{timeAgo(q.created_at)}</span>

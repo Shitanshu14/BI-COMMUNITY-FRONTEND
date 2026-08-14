@@ -71,7 +71,7 @@ export default function SearchResults() {
               style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
               onClick={() => navigate("/profile/" + u.id)}
             >
-              <Avatar name={u.username} size={36} />
+              <Avatar name={u.username} src={u.avatar} size={36} />
               <div>
                 <div className="entry-title" style={{ fontSize: 14 }}>
                   {u.username}
@@ -116,8 +116,8 @@ export default function SearchResults() {
             <div className="entry" key={p.id} onClick={() => navigate("/posts/" + p.id)} style={{ cursor: "pointer" }}>
               <div className="entry-head">
                 <span className="entry-title">{p.title}</span>
-                <span className="badge badge-type">{typeIcon(p.post_type)} {groupLabel(p.post_type)}</span>
-                {subtypeLabel(p.post_type) && <span className="badge badge-tag">{subtypeLabel(p.post_type)}</span>}
+                <span className="badge badge-type">{typeIcon(p)} {groupLabel(p)}</span>
+                {subtypeLabel(p) && <span className="badge badge-tag">{subtypeLabel(p)}</span>}
               </div>
               <div className="entry-body">{p.body}</div>
               <div className="entry-meta">

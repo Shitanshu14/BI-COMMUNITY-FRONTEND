@@ -110,6 +110,9 @@ export default function CircleDetail() {
           <button className="btn btn-primary" onClick={() => navigate("/circles/" + id + "/qa")}>
             ❓ Q&amp;A
           </button>
+          <button className="btn" onClick={() => navigate("/circles/" + id + "/events")}>
+            📅 Events
+          </button>
           <button className="btn" onClick={() => navigate("/circles/" + id + "/chat")}>
             💬 Live chat
           </button>
@@ -144,7 +147,7 @@ export default function CircleDetail() {
             <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
               {results.map((u) => (
                 <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Avatar name={u.username} size={28} />
+                  <Avatar name={u.username} src={u.avatar} size={28} />
                   <span style={{ flex: 1 }}>{u.username}</span>
                   <button
                     className="btn btn-sm btn-primary"
@@ -169,7 +172,7 @@ export default function CircleDetail() {
               style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, cursor: "pointer" }}
               onClick={() => navigate("/profile/" + m.id)}
             >
-              <Avatar name={m.username} size={32} />
+              <Avatar name={m.username} src={m.avatar} size={32} />
               <span>{m.username}</span>
               {m.is_verified && <span className="verified-tick" title="Verified">✓</span>}
               {m.role === "owner" && <span className="badge badge-role">owner</span>}

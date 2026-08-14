@@ -71,10 +71,10 @@ export default function TrendingCarousel() {
             <div className="trending-card" key={p.id} onClick={() => navigate("/posts/" + p.id)}>
               <div className="trending-card-community">{p.community_name}</div>
               <div className="trending-card-title">
-                {typeIcon(p.post_type)} {p.title}
+                {typeIcon(p)} {p.title}
               </div>
               <div className="entry-meta">
-                <span className="badge badge-tag">{groupLabel(p.post_type)}</span>
+                <span className="badge badge-tag">{groupLabel(p)}</span>
                 <span>♥ {p.like_count || 0}</span>
                 <span>💬 {p.comment_count || 0}</span>
               </div>

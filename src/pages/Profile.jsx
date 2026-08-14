@@ -5,6 +5,7 @@ import { api } from "../lib/api.js";
 import { RoleBadge, timeAgo, Avatar, ErrorBox, Spinner, VideoEmbed } from "../lib/helpers.jsx";
 import { typeIcon, groupLabel, subtypeLabel } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
+import PostExtras from "../components/PostExtras.jsx";
 
 /** "Saved" used to be its own sidebar page — now it's a tab on your own
  * profile, right next to Posts, so everything about you lives in one place. */
@@ -47,7 +48,7 @@ function SavedTab() {
         posts.map((p) => (
           <div className="post-card post-card-compact" key={p.id}>
             <div className="post-head">
-              <Avatar name={p.author?.username || "member"} size={32} />
+              <Avatar name={p.author?.username || "member"} src={p.author?.avatar} size={32} />
               <div className="post-head-meta">
                 <div className="post-author" onClick={() => p.author?.id && navigate("/profile/" + p.author.id)} style={{ cursor: "pointer" }}>
                   {p.author?.username || "Member"}
@@ -55,11 +56,12 @@ function SavedTab() {
                 </div>
                 <div className="post-sub">{timeAgo(p.created_at)}</div>
               </div>
-              <span className="badge badge-type">{typeIcon(p.post_type)} {groupLabel(p.post_type)}</span>
+              <span className="badge badge-type">{typeIcon(p)} {groupLabel(p)}</span>
             </div>
             <div className="post-title" onClick={() => navigate("/posts/" + p.id)}>{p.title}</div>
             <p className="post-body">{p.body}</p>
-            {p.image && <img src={p.image} alt="" className="post-image" />}
+            <PostExtras post={p} compact />
+            {p.image && <img src={p.image} alt="" className="post-image" loading="lazy" decoding="async" />}
             {(() => {
               const embed = extractVideoEmbed(p.body);
               return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;
@@ -185,7 +187,7 @@ function FollowListModal({ userId, kind, onClose }) {
           {list &&
             list.map((u) => (
               <div className="user-row" key={u.id} onClick={() => goTo(u)}>
-                <Avatar name={u.username} size={38} />
+                <Avatar name={u.username} src={u.avatar} size={38} />
                 <div className="user-row-meta">
                   <div className="user-row-name">
                     {u.username}
@@ -217,6 +219,11 @@ export default function Profile() {
   const [editForm, setEditForm] = useState({ headline: "", bio: "" });
   const [saveBusy, setSaveBusy] = useState(false);
   const [listModal, setListModal] = useState(null); // "followers" | "following" | null
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+
+  const HEADLINE_MAX = 100;
+  const BIO_MAX = 280;
 
   const isOwnProfile = !id || id === me?.id;
   const profileId = id || me?.id;
@@ -256,15 +263,36 @@ export default function Profile() {
     setSaveBusy(true);
     setErr("");
     try {
-      const updated = await api("/api/users/me/", { method: "PATCH", body: editForm });
+      let body = editForm;
+      if (avatarFile) {
+        const fd = new FormData();
+        fd.append("headline", editForm.headline);
+        fd.append("bio", editForm.bio);
+        fd.append("avatar", avatarFile);
+        body = fd;
+      }
+      const updated = await api("/api/users/me/", { method: "PATCH", body });
       setProfile((p) => ({ ...p, ...updated }));
       setMe((u) => ({ ...u, ...updated }));
       setEditing(false);
+      setAvatarFile(null);
+      setAvatarPreview(null);
     } catch (ex) {
       setErr(ex.message);
     } finally {
       setSaveBusy(false);
     }
+  };
+
+  const pickAvatar = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setErr("Image must be under 5MB.");
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const toggleFollow = async () => {
@@ -322,7 +350,15 @@ export default function Profile() {
   return (
     <div className="page">
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
-        <Avatar name={profile.username} size={72} />
+        <div className="profile-avatar-wrap">
+          <Avatar name={profile.username} src={avatarPreview || profile.avatar} size={72} />
+          {isOwnProfile && editing && (
+            <label className="profile-avatar-edit" title="Change profile picture">
+              📷
+              <input type="file" accept="image/*" onChange={pickAvatar} style={{ display: "none" }} />
+            </label>
+          )}
+        </div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div className="eyebrow" style={{ marginBottom: 4 }}>{isOwnProfile ? "Your profile" : "Profile"}</div>
           <h1 style={{ marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
@@ -396,17 +432,19 @@ export default function Profile() {
       <div className="card" style={{ marginBottom: 26, marginTop: 18 }}>
         {isOwnProfile && editing ? (
           <form onSubmit={saveProfile}>
-            <label>Headline</label>
+            <label>Headline <span className="char-count">{editForm.headline.length}/{HEADLINE_MAX}</span></label>
             <input
               type="text"
               value={editForm.headline}
-              onChange={(e) => setEditForm({ ...editForm, headline: e.target.value })}
+              maxLength={HEADLINE_MAX}
+              onChange={(e) => setEditForm({ ...editForm, headline: e.target.value.slice(0, HEADLINE_MAX) })}
               placeholder="e.g. Class 12 student, AI enthusiast"
             />
-            <label>Bio</label>
+            <label>Bio <span className="char-count">{editForm.bio.length}/{BIO_MAX}</span></label>
             <textarea
               value={editForm.bio}
-              onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+              maxLength={BIO_MAX}
+              onChange={(e) => setEditForm({ ...editForm, bio: e.target.value.slice(0, BIO_MAX) })}
               placeholder="A few lines about you"
             />
             <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
@@ -466,10 +504,10 @@ export default function Profile() {
               posts.map((p) => (
                 <div className="profile-post-tile" key={p.id} onClick={() => navigate("/posts/" + p.id)}>
                   {p.image ? (
-                    <img src={p.image} alt="" />
+                    <img src={p.image} alt="" loading="lazy" decoding="async" />
                   ) : (
                     <div className="profile-post-tile-fallback">
-                      <span>{typeIcon(p.post_type)}</span>
+                      <span>{typeIcon(p)}</span>
                       <div className="profile-post-tile-title">{p.title}</div>
                     </div>
                   )}

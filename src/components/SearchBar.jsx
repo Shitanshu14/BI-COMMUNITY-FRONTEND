@@ -79,7 +79,7 @@ export default function SearchBar() {
                     navigate("/profile/" + u.id);
                   }}
                 >
-                  <Avatar name={u.username} size={28} />
+                  <Avatar name={u.username} src={u.avatar} size={28} />
                   <div>
                     <div className="search-result-title">
                       {u.username}

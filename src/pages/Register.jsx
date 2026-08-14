@@ -9,6 +9,7 @@ export default function Register() {
   const [searchParams] = useSearchParams();
   const next = searchParams.get("next");
   const safeNext = next && next.startsWith("/") ? next : "/communities";
+  const USERNAME_MAX = 20;
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -42,8 +43,15 @@ export default function Register() {
       <div style={{ height: 20 }} />
       <form onSubmit={submit} className="card">
         <ErrorBox message={err} />
-        <label>Username</label>
-        <input type="text" value={form.username} onChange={set("username")} required />
+        <label>Username <span className="char-count">{form.username.length}/{USERNAME_MAX}</span></label>
+        <input
+          type="text"
+          value={form.username}
+          maxLength={USERNAME_MAX}
+          onChange={(e) => setForm({ ...form, username: e.target.value.slice(0, USERNAME_MAX) })}
+          required
+          minLength={3}
+        />
         <label>Email</label>
         <input type="email" value={form.email} onChange={set("email")} required />
         <label>Password</label>

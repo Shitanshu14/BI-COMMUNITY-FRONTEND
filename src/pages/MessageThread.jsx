@@ -102,7 +102,7 @@ export default function MessageThread() {
 
       {otherUser && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-          <Avatar name={otherUser.username} size={38} />
+          <Avatar name={otherUser.username} src={otherUser.avatar} size={38} />
           <div>
             <h1 style={{ margin: 0, fontSize: 20 }}>
               {otherUser.username}
@@ -133,7 +133,7 @@ export default function MessageThread() {
           const mine = senderId(m) === user.id;
           return (
             <div className={"bubble-row " + (mine ? "mine" : "theirs")} key={m.id || i}>
-              {!mine && <Avatar name={otherUser?.username || "member"} size={26} />}
+              {!mine && <Avatar name={otherUser?.username || "member"} src={otherUser?.avatar} size={26} />}
               <div style={{ marginLeft: mine ? 0 : 8 }}>
                 <div className="bubble">{m.message || m.body || m.text}</div>
                 <div className="bubble-meta">

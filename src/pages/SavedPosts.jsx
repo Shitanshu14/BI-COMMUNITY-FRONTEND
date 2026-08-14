@@ -4,6 +4,7 @@ import { api } from "../lib/api.js";
 import { ErrorBox, Avatar, timeAgo, VideoEmbed } from "../lib/helpers.jsx";
 import { typeIcon, subtypeLabel, groupLabel } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
+import PostExtras from "../components/PostExtras.jsx";
 
 export default function SavedPosts() {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export default function SavedPosts() {
         posts.map((p) => (
           <div className="post-card" key={p.id}>
             <div className="post-head">
-              <Avatar name={p.author?.username || "member"} size={38} />
+              <Avatar name={p.author?.username || "member"} src={p.author?.avatar} size={38} />
               <div className="post-head-meta">
                 <div
                   className="post-author"
@@ -68,15 +69,16 @@ export default function SavedPosts() {
                 </div>
                 <div className="post-sub">{timeAgo(p.created_at)}</div>
               </div>
-              <span className="badge badge-type">{typeIcon(p.post_type)} {groupLabel(p.post_type)}</span>
-              {subtypeLabel(p.post_type) && <span className="badge badge-tag">{subtypeLabel(p.post_type)}</span>}
+              <span className="badge badge-type">{typeIcon(p)} {groupLabel(p)}</span>
+              {subtypeLabel(p) && <span className="badge badge-tag">{subtypeLabel(p)}</span>}
             </div>
 
             <div className="post-title" onClick={() => navigate("/posts/" + p.id)}>
               {p.title}
             </div>
             <p className="post-body">{p.body}</p>
-            {p.image && <img src={p.image} alt="" className="post-image" />}
+            <PostExtras post={p} compact />
+            {p.image && <img src={p.image} alt="" className="post-image" loading="lazy" decoding="async" />}
             {(() => {
               const embed = extractVideoEmbed(p.body);
               return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;

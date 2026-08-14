@@ -129,13 +129,15 @@ export default function Notifications() {
               gap: 12,
               alignItems: "center",
               cursor: "pointer",
-              background: n.is_read ? "transparent" : "var(--primary-soft)",
+              background: n.is_read ? "transparent" : "var(--accent-gradient-soft)",
+              boxShadow: n.is_read ? "none" : "var(--glow-primary-soft)",
               borderRadius: n.is_read ? 0 : "var(--radius)",
               padding: n.is_read ? "14px 0" : "14px 10px",
+              transition: "background 0.15s ease, box-shadow 0.15s ease",
             }}
             onClick={() => openNotification(n)}
           >
-            <Avatar name={n.actor?.username || "?"} size={36} />
+            <Avatar name={n.actor?.username || "?"} src={n.actor?.avatar} size={36} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14 }}>
                 <strong>{n.actor?.username || "Someone"}</strong> {n.verb_display}

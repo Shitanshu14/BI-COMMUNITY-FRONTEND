@@ -144,7 +144,7 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-user" onClick={() => navigate("/profile")}>
-        <Avatar name={user.username} size={36} />
+        <Avatar name={user.username} src={user.avatar} size={36} />
         <div>
           <div className="sidebar-user-name">
             {user.username}
