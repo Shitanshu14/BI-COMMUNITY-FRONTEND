@@ -134,7 +134,7 @@ export default function MessageThread() {
           return (
             <div className={"bubble-row " + (mine ? "mine" : "theirs")} key={m.id || i}>
               {!mine && <Avatar name={otherUser?.username || "member"} src={otherUser?.avatar} size={26} />}
-              <div style={{ marginLeft: mine ? 0 : 8 }}>
+              <div className="bubble-col" style={{ marginLeft: mine ? 0 : 8 }}>
                 <div className="bubble">{m.message || m.body || m.text}</div>
                 <div className="bubble-meta">
                   {m.created_at && <span>{timeAgo(m.created_at)}</span>}

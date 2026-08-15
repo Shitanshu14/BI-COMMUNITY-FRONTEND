@@ -127,7 +127,7 @@ export default function Chat({ kind = "community" }) {
               {showName && <div className="bubble-who">{name}</div>}
               <div className={"bubble-row " + (mine ? "mine" : "theirs")}>
                 {!mine && <Avatar name={name} size={26} />}
-                <div style={{ marginLeft: mine ? 0 : 8 }}>
+                <div className="bubble-col" style={{ marginLeft: mine ? 0 : 8 }}>
                   <div className="bubble">{m.message || m.body || m.text}</div>
                   {m.created_at && (
                     <div className="bubble-meta">
