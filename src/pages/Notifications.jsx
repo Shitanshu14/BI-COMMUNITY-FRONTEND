@@ -16,6 +16,13 @@ const TARGET_ROUTE = {
   community_joined: (n) => "/communities/" + n.target_id,
   circle_invited: (n) => "/circles/" + n.target_id,
   circle_invite_accepted: (n) => "/circles/" + n.target_id,
+  // These three carry the *circle's* id in target_id, not the question's/
+  // event's own id (Notification only has one generic target_id field, and
+  // the real route is nested under the circle) — route to the relevant
+  // list page rather than a specific item.
+  circle_question_answered: (n) => "/circles/" + n.target_id + "/qa",
+  circle_answer_accepted: (n) => "/circles/" + n.target_id + "/qa",
+  circle_event_created: (n) => "/circles/" + n.target_id + "/events",
   // Follow-request accept/reject lives in its own inbox now — see
   // FollowRequests.jsx / MyFollowRequestsView — so this opens that instead
   // of the requester's profile (which had no accept/reject action on it).
@@ -34,6 +41,9 @@ const VERB_ICON = {
   community_joined: "🧑‍🤝‍🧑",
   circle_invited: "🎯",
   circle_invite_accepted: "🎯",
+  circle_question_answered: "💬",
+  circle_answer_accepted: "✅",
+  circle_event_created: "📅",
   new_follower: "➕",
   follow_requested: "➕",
   follow_accepted: "✅",

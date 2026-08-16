@@ -29,13 +29,18 @@ export function AuthProvider({ children }) {
   }, [loadMe]);
 
   const login = async (email, password) => {
-    const data = await api("/api/users/login/", { method: "POST", body: { email, password } });
-    setUser(data.user);
+    await api("/api/users/login/", { method: "POST", body: { email, password } });
+    // Don't just `setUser(data.user)` from the login response — that uses
+    // a slimmer serializer than /api/users/me/ (missing is_support/is_staff,
+    // used to gate the Support Dashboard link), so the sidebar would be
+    // wrong until the next full page load. Fetching /me/ here keeps one
+    // source of truth for "what does the signed-in user object look like".
+    await loadMe();
   };
 
   const register = async (payload) => {
-    const data = await api("/api/users/register/", { method: "POST", body: payload });
-    setUser(data.user);
+    await api("/api/users/register/", { method: "POST", body: payload });
+    await loadMe();
   };
 
   const logout = async () => {

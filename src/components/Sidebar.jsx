@@ -179,6 +179,11 @@ export default function Sidebar() {
         <NavLink to="/settings" className={linkClass}>
           {icons.settings} Settings
         </NavLink>
+        {(user.is_support || user.is_staff) && (
+          <NavLink to="/support" className={linkClass}>
+            🛠️ Support
+          </NavLink>
+        )}
       </nav>
 
       <div className="sidebar-foot">
