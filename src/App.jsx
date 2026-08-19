@@ -14,6 +14,9 @@ import CircleDetail from "./pages/CircleDetail.jsx";
 import CircleQA from "./pages/CircleQA.jsx";
 import CircleEvents from "./pages/CircleEvents.jsx";
 import SupportDashboard from "./pages/SupportDashboard.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
+import SupportContact from "./pages/SupportContact.jsx";
 import CircleQuestionDetail from "./pages/CircleQuestionDetail.jsx";
 import PostDetail from "./pages/PostDetail.jsx";
 import Chat from "./pages/Chat.jsx";
@@ -33,6 +36,9 @@ function Routing() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/support-contact" element={<SupportContact />} />
       <Route
         path="/communities"
         element={

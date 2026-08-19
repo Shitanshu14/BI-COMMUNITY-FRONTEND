@@ -51,12 +51,17 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+        <div style={{ textAlign: "right", marginBottom: 14 }}>
+          <Link to="/forgot-password" style={{ fontSize: 13, textDecoration: "underline" }}>Forgot password?</Link>
+        </div>
         <button className="btn btn-primary" disabled={busy} style={{ width: "100%" }}>
           {busy ? <Spinner /> : "Sign in"}
         </button>
       </form>
       <p className="subtle" style={{ marginTop: 16 }}>
         New here? <Link to={"/register" + (next ? "?next=" + encodeURIComponent(next) : "")} style={{ textDecoration: "underline" }}>Create an account</Link>
+        {" · "}
+        <Link to="/support-contact" style={{ textDecoration: "underline" }}>Contact support</Link>
       </p>
     </div>
   );

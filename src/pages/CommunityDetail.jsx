@@ -248,6 +248,13 @@ export default function CommunityDetail() {
 
       <ErrorBox message={err} />
 
+      {community?.is_on_hold && (
+        <div className="hold-banner">
+          ⏸️ This community is on hold — no new posts, comments, or likes right now.
+          You're welcome to stay; it'll reopen once support lifts the hold.
+        </div>
+      )}
+
       <div className="feed-layout" style={{ marginTop: 20 }}>
         <div className="feed-main">
           {community && !community.is_member ? (
@@ -258,6 +265,12 @@ export default function CommunityDetail() {
               <button className="btn btn-primary" onClick={toggleJoin} disabled={joinBusy}>
                 {joinBusy ? <Spinner /> : "Join community"}
               </button>
+            </div>
+          ) : community?.is_on_hold ? (
+            <div className="card composer" style={{ textAlign: "center" }}>
+              <p className="subtle" style={{ margin: "6px 0" }}>
+                ⏸️ Posting is paused while this community is on hold.
+              </p>
             </div>
           ) : (
             <div className="card composer">
@@ -281,7 +294,7 @@ export default function CommunityDetail() {
             </div>
           )}
 
-          {showForm && community?.is_member && (
+          {showForm && community?.is_member && !community?.is_on_hold && (
             <form onSubmit={create} className="card" style={{ marginBottom: 18 }}>
               <label>Type</label>
               {form.post_type === "post" ? (

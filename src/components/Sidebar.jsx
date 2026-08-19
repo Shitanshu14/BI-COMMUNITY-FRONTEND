@@ -184,6 +184,9 @@ export default function Sidebar() {
             🛠️ Support
           </NavLink>
         )}
+        <NavLink to="/support-contact" className={linkClass}>
+          🆘 Contact support
+        </NavLink>
       </nav>
 
       <div className="sidebar-foot">

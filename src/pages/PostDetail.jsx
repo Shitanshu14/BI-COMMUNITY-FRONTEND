@@ -255,11 +255,15 @@ export default function PostDetail() {
   };
 
   const deletePost = async () => {
-    if (!window.confirm("Delete this post? This can't be undone.")) return;
+    if (!window.confirm(isAuthor ? "Delete this post? This can't be undone." : "Remove this post as a support action? This can't be undone.")) return;
     setDeleteBusy(true);
     setErr("");
     try {
-      await api("/api/posts/" + id + "/", { method: "DELETE" });
+      // Support/staff removing someone else's post goes through the
+      // dedicated moderation endpoint — the normal DELETE only allows the
+      // post's own author (see posts/views.py IsAuthorOrReadOnly).
+      const path = isAuthor ? "/api/posts/" + id + "/" : "/api/support/posts/" + id + "/";
+      await api(path, { method: "DELETE" });
       navigate("/communities/" + post.community);
     } catch (ex) {
       setErr(ex.message);
@@ -423,14 +427,14 @@ export default function PostDetail() {
                 </button>
               )}
               {isAuthor && !editing && (
-                <>
-                  <button className="btn btn-sm" onClick={() => setEditing(true)}>
-                    Edit
-                  </button>
-                  <button className="btn btn-sm" onClick={deletePost} disabled={deleteBusy}>
-                    {deleteBusy ? <Spinner /> : "Delete"}
-                  </button>
-                </>
+                <button className="btn btn-sm" onClick={() => setEditing(true)}>
+                  Edit
+                </button>
+              )}
+              {(isAuthor || user?.is_support || user?.is_staff) && !editing && (
+                <button className="btn btn-sm" onClick={deletePost} disabled={deleteBusy}>
+                  {deleteBusy ? <Spinner /> : isAuthor ? "Delete" : "Remove (support)"}
+                </button>
               )}
             </div>
           </div>
