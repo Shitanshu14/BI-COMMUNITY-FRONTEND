@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../lib/api.js";
 import { RoleBadge, timeAgo, Avatar, ErrorBox, Spinner, VideoEmbed } from "../lib/helpers.jsx";
-import { typeIcon, groupLabel, subtypeLabel } from "../lib/postTypes.js";
+import { typeIcon, groupLabel, subtypeLabel, typeColorKey } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
 
@@ -46,7 +46,7 @@ function SavedTab() {
       )}
       {posts &&
         posts.map((p) => (
-          <div className="post-card post-card-compact" key={p.id}>
+          <div className="post-card post-card-compact" data-ptype={typeColorKey(p)} key={p.id}>
             <div className="post-head">
               <Avatar name={p.author?.username || "member"} src={p.author?.avatar} size={32} />
               <div className="post-head-meta">
@@ -56,7 +56,7 @@ function SavedTab() {
                 </div>
                 <div className="post-sub">{timeAgo(p.created_at)}</div>
               </div>
-              <span className="badge badge-type">{typeIcon(p)} {groupLabel(p)}</span>
+              <span className="badge badge-type" data-ptype={typeColorKey(p)}>{typeIcon(p)} {groupLabel(p)}</span>
             </div>
             <div className="post-title" onClick={() => navigate("/posts/" + p.id)}>{p.title}</div>
             <p className="post-body">{p.body}</p>

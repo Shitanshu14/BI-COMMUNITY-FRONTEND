@@ -63,6 +63,19 @@ export function groupLabel(post) {
   return (TOP_TYPES.find((t) => t.value === g) || {}).label || "Post";
 }
 
+// A short key used purely for styling — picks the color a post-card /
+// badge should use. Question and Poll get their own color; a "post" gets
+// colored by its Knowledge/Project/Resource subtype so the three read as
+// visually distinct even though they share one post_type on the backend.
+// See the `--type-*` CSS variables and `[data-ptype]` rules in index.css.
+export function typeColorKey(post) {
+  const g = groupOf(post);
+  if (g === "question") return "question";
+  if (g === "poll") return "poll";
+  const s = subtypeOf(post);
+  return s ? s.value.toLowerCase() : "post";
+}
+
 // Post.links entries are flat "Label|||URL" strings (see backend
 // PostSerializer) — parse them back into { label, url } for rendering.
 export function parseLinks(links) {

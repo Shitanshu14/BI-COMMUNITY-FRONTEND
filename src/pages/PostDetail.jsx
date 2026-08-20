@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Spinner, ErrorBox, timeAgo, Avatar, VideoEmbed } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { typeIcon, subtypeLabel, groupLabel } from "../lib/postTypes.js";
+import { typeIcon, subtypeLabel, groupLabel, typeColorKey } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
 
@@ -380,7 +380,7 @@ export default function PostDetail() {
       {!post && <div className="empty-state">Loading…</div>}
 
       {post && (
-        <div className="card" style={{ marginBottom: 10 }}>
+        <div className="card" data-ptype={typeColorKey(post)} style={{ marginBottom: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div
               style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, cursor: "pointer" }}
@@ -403,7 +403,7 @@ export default function PostDetail() {
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span className="badge badge-type">{typeIcon(post)} {groupLabel(post)}</span>
+              <span className="badge badge-type" data-ptype={typeColorKey(post)}>{typeIcon(post)} {groupLabel(post)}</span>
               {subtypeLabel(post) && <span className="badge badge-tag">{subtypeLabel(post)}</span>}
               {post.post_type === "question" && post.is_solved && (
                 <span className="badge badge-solved">✓ Solved</span>

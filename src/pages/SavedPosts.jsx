@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { ErrorBox, Avatar, timeAgo, VideoEmbed } from "../lib/helpers.jsx";
-import { typeIcon, subtypeLabel, groupLabel } from "../lib/postTypes.js";
+import { typeIcon, subtypeLabel, groupLabel, typeColorKey } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
 
@@ -55,7 +55,7 @@ export default function SavedPosts() {
 
       {posts &&
         posts.map((p) => (
-          <div className="post-card" key={p.id}>
+          <div className="post-card" data-ptype={typeColorKey(p)} key={p.id}>
             <div className="post-head">
               <Avatar name={p.author?.username || "member"} src={p.author?.avatar} size={38} />
               <div className="post-head-meta">
@@ -69,7 +69,7 @@ export default function SavedPosts() {
                 </div>
                 <div className="post-sub">{timeAgo(p.created_at)}</div>
               </div>
-              <span className="badge badge-type">{typeIcon(p)} {groupLabel(p)}</span>
+              <span className="badge badge-type" data-ptype={typeColorKey(p)}>{typeIcon(p)} {groupLabel(p)}</span>
               {subtypeLabel(p) && <span className="badge badge-tag">{subtypeLabel(p)}</span>}
             </div>
 

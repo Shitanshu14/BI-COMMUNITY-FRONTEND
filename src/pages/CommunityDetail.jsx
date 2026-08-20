@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Spinner, ErrorBox, timeAgo, Avatar, VideoEmbed } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel, groupLabel, encodeLink } from "../lib/postTypes.js";
+import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel, groupLabel, typeColorKey, encodeLink } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
 
@@ -466,7 +466,7 @@ export default function CommunityDetail() {
               return <div className="empty-state">No {filter === "all" ? "" : filter} posts here yet.</div>;
             }
             return visible.map((p) => (
-              <div className="post-card" key={p.id}>
+              <div className="post-card" data-ptype={typeColorKey(p)} key={p.id}>
                 <div className="post-head">
                   <div
                     style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
@@ -486,7 +486,7 @@ export default function CommunityDetail() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {p.is_pinned && <span className="badge badge-verified">📌 Pinned</span>}
-                    <span className="badge badge-type">{typeIcon(p)} {groupLabel(p)}</span>
+                    <span className="badge badge-type" data-ptype={typeColorKey(p)}>{typeIcon(p)} {groupLabel(p)}</span>
                     {subtypeLabel(p) && <span className="badge badge-tag">{subtypeLabel(p)}</span>}
                     {p.post_type === "question" && (
                       <span className={"badge " + (p.is_solved ? "badge-solved" : "badge-unsolved")}>
@@ -506,47 +506,72 @@ export default function CommunityDetail() {
                   </div>
                 </div>
                 <div className="post-body-row">
+                  {groupOf(p) === "question" && (
+                    <div className="qa-stats">
+                      <div className="qa-stat">
+                        <span className="qa-stat-num">{p.like_count || 0}</span>
+                        <span className="qa-stat-label">likes</span>
+                      </div>
+                      <div className="qa-stat qa-stat-answers">
+                        <span className="qa-stat-num">{p.comment_count || 0}</span>
+                        <span className="qa-stat-label">answers</span>
+                      </div>
+                    </div>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="post-title" onClick={() => navigate("/posts/" + p.id)}>
                       {p.title}
                     </div>
                     <div className="post-body">{p.body}</div>
                     <PostExtras post={p} compact />
-                    {p.post_type === "poll" && p.poll_options?.length > 0 && (
-                      <div className="poll-options">
-                        {(() => {
-                          const total = p.poll_options.reduce((s, o) => s + (o.vote_count || 0), 0);
-                          return p.poll_options.map((o, idx) => {
-                            const pct = total > 0 ? Math.round(((o.vote_count || 0) / total) * 100) : 0;
-                            const picked = p.voted_option_id === o.id;
-                            return (
-                              <button
-                                type="button"
-                                key={o.id}
-                                className={"poll-option c" + (idx % 5) + (picked ? " picked" : "")}
-                                onClick={() => vote(p.id, o.id)}
-                              >
-                                <div className="poll-option-fill" style={{ width: pct + "%" }} />
-                                <span className="poll-option-label">{picked ? "✓ " : ""}{o.text}</span>
-                                <span className="poll-option-pct">{pct}%</span>
-                              </button>
-                            );
-                          });
-                        })()}
-                        <div className="poll-meta">
-                          <span>{p.poll_options.reduce((s, o) => s + (o.vote_count || 0), 0)} votes</span>
-                          {p.voted_option_id && <span>You voted ✓</span>}
+                    {groupOf(p) === "poll" && p.poll_options?.length > 0 && (
+                      <div className="poll-panel">
+                        <div className="poll-panel-head">
+                          <span>📊 Poll</span>
+                          <span className="poll-panel-votes">
+                            {p.poll_options.reduce((s, o) => s + (o.vote_count || 0), 0)} votes
+                          </span>
                         </div>
+                        <div className="poll-options">
+                          {(() => {
+                            const total = p.poll_options.reduce((s, o) => s + (o.vote_count || 0), 0);
+                            return p.poll_options.map((o, idx) => {
+                              const pct = total > 0 ? Math.round(((o.vote_count || 0) / total) * 100) : 0;
+                              const picked = p.voted_option_id === o.id;
+                              return (
+                                <button
+                                  type="button"
+                                  key={o.id}
+                                  className={"poll-option c" + (idx % 5) + (picked ? " picked" : "")}
+                                  onClick={() => vote(p.id, o.id)}
+                                >
+                                  <div className="poll-option-fill" style={{ width: pct + "%" }} />
+                                  <span className="poll-option-label">{picked ? "✓ " : ""}{o.text}</span>
+                                  <span className="poll-option-pct">{pct}%</span>
+                                </button>
+                              );
+                            });
+                          })()}
+                        </div>
+                        {p.voted_option_id && <div className="poll-panel-voted">You voted ✓</div>}
                       </div>
                     )}
                   </div>
-                  {!p.image && p.post_type !== "poll" && (
+                  {groupOf(p) !== "question" && groupOf(p) !== "poll" && !p.image && (
                     <div className="post-visual">
                       <span>{typeIcon(p)}</span>
                     </div>
                   )}
                 </div>
-                {p.image && <img src={p.image} alt="" className="post-image" loading="lazy" decoding="async" />}
+                {p.image && groupOf(p) === "post" && (
+                  <div className="post-cover">
+                    <img src={p.image} alt="" className="post-cover-img" loading="lazy" decoding="async" />
+                    <span className="post-cover-chip">{typeIcon(p)} {subtypeLabel(p) || groupLabel(p)}</span>
+                  </div>
+                )}
+                {p.image && groupOf(p) !== "post" && (
+                  <img src={p.image} alt="" className="post-image" loading="lazy" decoding="async" />
+                )}
                 {(() => {
                   const embed = extractVideoEmbed(p.body);
                   return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;
@@ -560,7 +585,7 @@ export default function CommunityDetail() {
                     {p.is_liked ? "♥" : "♡"} {p.like_count || 0}
                   </button>
                   <span className="post-footer-action" style={{ cursor: "default" }}>
-                    💬 {p.comment_count || 0}
+                    💬 {p.comment_count || 0} {groupOf(p) === "question" ? "answers" : "comments"}
                   </span>
                   <button
                     className={"post-footer-action" + (p.is_saved ? " saved" : "")}
