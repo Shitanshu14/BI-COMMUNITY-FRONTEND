@@ -18,6 +18,16 @@ export default function CircleDetail() {
   const [inviteBusyId, setInviteBusyId] = useState(null);
   const [invited, setInvited] = useState({}); // user_id -> true, to disable button after sending
 
+  // Owner-only "edit circle" panel — name/description/icon. Lets a circle
+  // grow into a real identity (own picture, clearer purpose) instead of
+  // being stuck with whatever was typed in the one-shot creation form.
+  const [showEdit, setShowEdit] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editIconFile, setEditIconFile] = useState(null);
+  const [editIconPreview, setEditIconPreview] = useState(null);
+  const [editBusy, setEditBusy] = useState(false);
+
   const load = async () => {
     try {
       const [c, m] = await Promise.all([
@@ -75,6 +85,44 @@ export default function CircleDetail() {
     }
   };
 
+  const openEdit = () => {
+    setEditName(circle.name);
+    setEditDescription(circle.description || "");
+    setEditIconFile(null);
+    setEditIconPreview(null);
+    setShowEdit(true);
+  };
+
+  const onEditIcon = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditIconFile(file);
+    setEditIconPreview(URL.createObjectURL(file));
+  };
+
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    if (!editName.trim()) return;
+    setEditBusy(true);
+    setErr("");
+    try {
+      const fd = new FormData();
+      fd.append("name", editName.trim());
+      fd.append("description", editDescription);
+      if (editIconFile) fd.append("icon", editIconFile);
+      const updated = await api("/api/circles/" + id + "/", { method: "PATCH", body: fd });
+      setCircle((prev) => ({ ...prev, ...updated }));
+      setShowEdit(false);
+      if (editIconPreview) URL.revokeObjectURL(editIconPreview);
+      setEditIconFile(null);
+      setEditIconPreview(null);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
   const deleteCircle = async () => {
     if (!window.confirm(`Delete "${circle.name}" for everyone? This can't be undone.`)) return;
     setBusy(true);
@@ -100,13 +148,16 @@ export default function CircleDetail() {
 
   return (
     <div>
-      <div className="split">
-        <div>
-          <div className="eyebrow">Circle</div>
-          <h1>{circle.name}</h1>
-          {circle.description && <p style={{ color: "var(--muted, #888)" }}>{circle.description}</p>}
+      <div className="split" style={{ alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          <Avatar name={circle.name} src={circle.icon} size={48} />
+          <div>
+            <div className="eyebrow">Circle</div>
+            <h1 style={{ marginBottom: circle.description ? 4 : 0 }}>{circle.name}</h1>
+            {circle.description && <p style={{ color: "var(--muted, #888)", margin: 0 }}>{circle.description}</p>}
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="btn btn-primary" onClick={() => navigate("/circles/" + id + "/qa")}>
             ❓ Q&amp;A
           </button>
@@ -116,6 +167,11 @@ export default function CircleDetail() {
           <button className="btn" onClick={() => navigate("/circles/" + id + "/chat")}>
             💬 Live chat
           </button>
+          {circle.is_owner && (
+            <button className="btn" onClick={() => (showEdit ? setShowEdit(false) : openEdit())}>
+              {showEdit ? "Cancel" : "✏️ Edit circle"}
+            </button>
+          )}
           {circle.is_owner ? (
             <button className="btn" onClick={deleteCircle} disabled={busy}>
               Delete circle
@@ -129,6 +185,38 @@ export default function CircleDetail() {
       </div>
 
       <ErrorBox message={err} />
+
+      {showEdit && circle.is_owner && (
+        <form onSubmit={saveEdit} className="card" style={{ maxWidth: 460, padding: 16, marginTop: 16, marginBottom: 8 }}>
+          <div className="rail-title" style={{ fontSize: 15, marginBottom: 10 }}>Edit circle</div>
+          <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 14 }}>
+            <Avatar name={editName || circle.name} src={editIconPreview || circle.icon} size={52} />
+            <label className="btn btn-sm" style={{ cursor: "pointer" }}>
+              Change picture
+              <input type="file" accept="image/*" onChange={onEditIcon} style={{ display: "none" }} />
+            </label>
+          </div>
+          <label>Name</label>
+          <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} required />
+          <div style={{ height: 10 }} />
+          <label>Description</label>
+          <textarea
+            value={editDescription}
+            onChange={(e) => setEditDescription(e.target.value)}
+            rows={3}
+            placeholder="What's this circle for?"
+          />
+          <div style={{ height: 12 }} />
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn btn-primary" type="submit" disabled={editBusy}>
+              {editBusy ? "Saving…" : "Save changes"}
+            </button>
+            <button type="button" className="btn" onClick={() => setShowEdit(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="community-card-meta" style={{ marginBottom: 16 }}>
         {circle.member_count} / {circle.max_members} members

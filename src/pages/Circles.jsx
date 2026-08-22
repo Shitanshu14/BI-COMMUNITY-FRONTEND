@@ -121,7 +121,7 @@ export default function Circles() {
           <div className="suggested-row">
             {invites.map((inv) => (
               <div className="suggested-card" key={inv.id}>
-                <Avatar name={inv.circle.name} size={36} />
+                <Avatar name={inv.circle.name} src={inv.circle.icon} size={36} />
                 <div className="suggested-card-name">{inv.circle.name}</div>
                 <div className="suggested-card-meta">
                   invited by {inv.invited_by?.username || "someone"} · {timeAgo(inv.created_at)}
@@ -160,7 +160,7 @@ export default function Circles() {
         {(circles || []).map((c) => (
           <div className="community-card" key={c.id} onClick={() => navigate("/circles/" + c.id)}>
             <div className="community-card-head">
-              <Avatar name={c.name} size={40} />
+              <Avatar name={c.name} src={c.icon} size={40} />
               <span className="badge badge-role">private</span>
               {c.is_owner && <span className="badge badge-verified">owner</span>}
             </div>

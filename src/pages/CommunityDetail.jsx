@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel, groupLabel, typeColorKey, encodeLink } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
+import PostImageSlider from "../components/PostImageSlider.jsx";
 
 const EMPTY_FORM = { post_type: "question", title: "", body: "", tags: [] };
 
@@ -22,6 +23,7 @@ export default function CommunityDetail() {
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [galleryFiles, setGalleryFiles] = useState([]); // [{file, url}] — up to 6, sent as repeated `images` fields
   const [busy, setBusy] = useState(false);
   const [likeBusy, setLikeBusy] = useState(null);
   const [saveBusy, setSaveBusy] = useState(null);
@@ -33,6 +35,11 @@ export default function CommunityDetail() {
   // "recent" (default, newest first) or "trending" (engagement-ranked,
   // last 7 days — see posts/views.py PostViewSet.get_queryset).
   const [sortBy, setSortBy] = useState("recent");
+  // In-community search: client-side match against title/body/tags of the
+  // posts already loaded for this community. Kept client-side (no extra
+  // request) since a single community's feed is a small, already-fetched
+  // list — this just narrows what's shown, same idea as the type tabs.
+  const [search, setSearch] = useState("");
 
   const toggleJoin = async () => {
     if (!community) return;
@@ -113,9 +120,20 @@ export default function CommunityDetail() {
   };
 
   const onImage = (e) => {
-    const file = e.target.files[0];
-    setImage(file || null);
-    setImagePreview(file ? URL.createObjectURL(file) : null);
+    const picked = Array.from(e.target.files || []);
+    if (!picked.length) return;
+    setGalleryFiles((prev) => {
+      const room = Math.max(0, 6 - prev.length);
+      const added = picked.slice(0, room).map((file) => ({ file, url: URL.createObjectURL(file) }));
+      return [...prev, ...added];
+    });
+    e.target.value = ""; // allow picking the same file again after removing it
+  };
+  const removeGalleryImage = (i) => {
+    setGalleryFiles((prev) => {
+      URL.revokeObjectURL(prev[i].url);
+      return prev.filter((_, idx) => idx !== i);
+    });
   };
 
   const create = async (e) => {
@@ -129,6 +147,7 @@ export default function CommunityDetail() {
       fd.append("body", form.body);
       fd.append("community", id);
       if (image) fd.append("image", image);
+      galleryFiles.forEach(({ file }) => fd.append("images", file));
       (form.tags || []).forEach((t) => fd.append("tags", t));
       if (form.post_type === "poll") {
         pollOptions.filter((o) => o.trim()).forEach((o) => fd.append("options", o.trim()));
@@ -145,6 +164,8 @@ export default function CommunityDetail() {
       setPollOptions(["", ""]);
       setImage(null);
       setImagePreview(null);
+      galleryFiles.forEach((g) => URL.revokeObjectURL(g.url));
+      setGalleryFiles([]);
       setShowForm(false);
       load();
     } catch (ex) {
@@ -329,16 +350,23 @@ export default function CommunityDetail() {
                     <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                       <input
                         type="text"
+                        name={"link-label-" + i}
                         value={row.label}
                         placeholder="Label (e.g. Live demo, Portfolio, Instagram)"
                         onChange={setLinkRow(i, "label")}
+                        autoComplete="off"
                         style={{ flex: 1 }}
                       />
                       <input
-                        type="text"
+                        type="url"
+                        name={"link-url-" + i}
                         value={row.url}
                         placeholder="https://…"
                         onChange={setLinkRow(i, "url")}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
                         style={{ flex: 1 }}
                       />
                       {linkRows.length > 1 && (
@@ -381,28 +409,24 @@ export default function CommunityDetail() {
                   )}
                 </div>
               )}
-              <label>Image (optional)</label>
-              {!imagePreview ? (
-                <label className="image-dropzone">
-                  <input type="file" accept="image/*" onChange={onImage} style={{ display: "none" }} />
-                  <span className="image-dropzone-icon">📷</span>
-                  <span>Click to add an image</span>
-                </label>
-              ) : (
-                <div className="image-preview-wrap">
-                  <img src={imagePreview} alt="" className="image-preview" />
-                  <button
-                    type="button"
-                    className="image-preview-remove"
-                    onClick={() => {
-                      setImage(null);
-                      setImagePreview(null);
-                    }}
-                  >
-                    ✕ Remove
-                  </button>
-                </div>
-              )}
+              <label>Images (optional — up to 6, shown as a swipeable slide)</label>
+              <div className="gallery-picker">
+                {galleryFiles.map((g, i) => (
+                  <div className="gallery-picker-thumb" key={g.url}>
+                    <img src={g.url} alt="" />
+                    <button type="button" className="gallery-picker-remove" onClick={() => removeGalleryImage(i)}>
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {galleryFiles.length < 6 && (
+                  <label className="gallery-picker-add">
+                    <input type="file" accept="image/*" multiple onChange={onImage} style={{ display: "none" }} />
+                    <span className="image-dropzone-icon">📷</span>
+                    <span>{galleryFiles.length ? "Add more" : "Click to add images"}</span>
+                  </label>
+                )}
+              </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button className="btn btn-primary" disabled={busy}>
                   {busy ? <Spinner /> : "Post"}
@@ -414,12 +438,24 @@ export default function CommunityDetail() {
                     setShowForm(false);
                     setImage(null);
                     setImagePreview(null);
+                    galleryFiles.forEach((g) => URL.revokeObjectURL(g.url));
+                    setGalleryFiles([]);
                   }}
                 >
                   Cancel
                 </button>
               </div>
             </form>
+          )}
+
+          {posts !== null && posts.length > 0 && (
+            <input
+              type="text"
+              placeholder="🔍 Search posts in this community — title, body, or tag…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ marginBottom: 12 }}
+            />
           )}
 
           {posts !== null && posts.length > 0 && (
@@ -461,9 +497,21 @@ export default function CommunityDetail() {
           )}
 
           {(() => {
-            const visible = posts ? posts.filter((p) => filter === "all" || groupOf(p) === filter) : [];
+            const q = search.trim().toLowerCase();
+            const matchesSearch = (p) =>
+              !q ||
+              p.title?.toLowerCase().includes(q) ||
+              p.body?.toLowerCase().includes(q) ||
+              (p.tags || []).some((t) => String(t).toLowerCase().includes(q));
+            const visible = posts ? posts.filter((p) => (filter === "all" || groupOf(p) === filter) && matchesSearch(p)) : [];
             if (posts && posts.length > 0 && visible.length === 0) {
-              return <div className="empty-state">No {filter === "all" ? "" : filter} posts here yet.</div>;
+              return (
+                <div className="empty-state">
+                  {q
+                    ? `No posts match "${search}".`
+                    : `No ${filter === "all" ? "" : filter} posts here yet.`}
+                </div>
+              );
             }
             return visible.map((p) => (
               <div className="post-card" data-ptype={typeColorKey(p)} key={p.id}>
@@ -487,7 +535,20 @@ export default function CommunityDetail() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {p.is_pinned && <span className="badge badge-verified">📌 Pinned</span>}
                     <span className="badge badge-type" data-ptype={typeColorKey(p)}>{typeIcon(p)} {groupLabel(p)}</span>
-                    {subtypeLabel(p) && <span className="badge badge-tag">{subtypeLabel(p)}</span>}
+                    {subtypeLabel(p) && (
+                      <span
+                        className="badge badge-tag"
+                        style={{ cursor: "pointer" }}
+                        title={`Show all "${subtypeLabel(p)}" posts`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFilter("all");
+                          setSearch(subtypeLabel(p));
+                        }}
+                      >
+                        {subtypeLabel(p)}
+                      </span>
+                    )}
                     {p.post_type === "question" && (
                       <span className={"badge " + (p.is_solved ? "badge-solved" : "badge-unsolved")}>
                         {p.is_solved ? "✓ Solved" : "Open"}
@@ -557,20 +618,22 @@ export default function CommunityDetail() {
                       </div>
                     )}
                   </div>
-                  {groupOf(p) !== "question" && groupOf(p) !== "poll" && !p.image && (
+                  {groupOf(p) !== "question" && groupOf(p) !== "poll" && !p.image && !(p.images && p.images.length) && (
                     <div className="post-visual">
                       <span>{typeIcon(p)}</span>
                     </div>
                   )}
                 </div>
-                {p.image && groupOf(p) === "post" && (
-                  <div className="post-cover">
-                    <img src={p.image} alt="" className="post-cover-img" loading="lazy" decoding="async" />
-                    <span className="post-cover-chip">{typeIcon(p)} {subtypeLabel(p) || groupLabel(p)}</span>
-                  </div>
+                {(p.image || (p.images && p.images.length > 0)) && groupOf(p) === "post" && (
+                  <PostImageSlider
+                    images={p.images}
+                    image={p.image}
+                    className="post-cover"
+                    chip={<span className="post-cover-chip">{typeIcon(p)} {subtypeLabel(p) || groupLabel(p)}</span>}
+                  />
                 )}
-                {p.image && groupOf(p) !== "post" && (
-                  <img src={p.image} alt="" className="post-image" loading="lazy" decoding="async" />
+                {(p.image || (p.images && p.images.length > 0)) && groupOf(p) !== "post" && (
+                  <PostImageSlider images={p.images} image={p.image} className="post-image-slider" />
                 )}
                 {(() => {
                   const embed = extractVideoEmbed(p.body);

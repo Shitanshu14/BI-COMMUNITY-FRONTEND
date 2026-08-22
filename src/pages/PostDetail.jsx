@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { typeIcon, subtypeLabel, groupLabel, typeColorKey } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
+import PostImageSlider from "../components/PostImageSlider.jsx";
 
 function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
   const [isLiked, setIsLiked] = useState(comment.is_liked || false);
   const [likeCount, setLikeCount] = useState(comment.like_count || 0);
   const [likeBusy, setLikeBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const toggleCommentLike = async () => {
     if (!user || likeBusy) return;
@@ -37,6 +39,24 @@ function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
       setLikeCount((n) => n + (wasLiked ? 1 : -1));
     } finally {
       setLikeBusy(false);
+    }
+  };
+
+  const shareComment = async () => {
+    // Same share pattern as the post itself (PostDetail.sharePost below) —
+    // comments are addressable one level deeper via a #comment- anchor, so
+    // sharing a comment carries it forward the same way sharing a post does.
+    const url = window.location.origin + "/posts/" + postId + "#comment-" + comment.id;
+    try {
+      if (navigator.share) {
+        await navigator.share({ url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // cancelled share sheet / blocked clipboard — ignore
     }
   };
 
@@ -64,63 +84,71 @@ function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
   const replies = comment.replies || [];
 
   return (
-    <div className="comment-thread" style={{ marginLeft: depth > 0 ? 26 : 0 }}>
-      <div className="entry" style={{ paddingLeft: 0 }}>
-        <div className="entry-head" style={{ marginBottom: 2 }}>
-          <span
-            style={{ fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-            onClick={() => comment.author?.id && navigate("/profile/" + comment.author.id)}
-          >
-            {comment.author?.username || "Member"}
-            {comment.author?.is_verified && <span className="verified-tick">✓</span>}
-          </span>
-        </div>
-        <div className="entry-body">{comment.body}</div>
-        <div className="entry-meta">
-          <span>{timeAgo(comment.created_at)}</span>
-          {user && (
-            <span
-              className={"post-footer-link" + (isLiked ? " liked" : "")}
-              style={{ fontSize: 12.5, marginLeft: 0 }}
-              onClick={toggleCommentLike}
-            >
-              {isLiked ? "♥" : "♡"} {likeCount > 0 ? likeCount : ""} Like
-            </span>
-          )}
-          {user && (
-            <span
-              className="post-footer-link"
-              style={{ fontSize: 12.5, marginLeft: 0 }}
-              onClick={() => setReplying((v) => !v)}
-            >
-              {replying ? "Cancel" : "Reply"}
-            </span>
-          )}
-          {replies.length > 0 && (
-            <span
-              className="post-footer-link"
-              style={{ fontSize: 12.5, marginLeft: 0 }}
-              onClick={() => setShowReplies((v) => !v)}
-            >
-              {showReplies ? "Hide" : "Show"} {replies.length} {replies.length === 1 ? "reply" : "replies"}
-            </span>
-          )}
-        </div>
+    <div className="comment-thread" id={"comment-" + comment.id} style={{ marginLeft: depth > 0 ? 26 : 0 }}>
+      <div className="entry comment-entry">
+        <div className="entry-head-row">
+          <Avatar name={comment.author?.username || "member"} src={comment.author?.avatar} size={30} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="entry-head" style={{ marginBottom: 2 }}>
+              <span
+                style={{ fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                onClick={() => comment.author?.id && navigate("/profile/" + comment.author.id)}
+              >
+                {comment.author?.username || "Member"}
+                {comment.author?.is_verified && <span className="verified-tick">✓</span>}
+              </span>
+              <span className="subtle" style={{ fontSize: 12 }}>{timeAgo(comment.created_at)}</span>
+            </div>
+            <div className="entry-body">{comment.body}</div>
+            <div className="entry-meta">
+              {user && (
+                <span
+                  className={"post-footer-link" + (isLiked ? " liked" : "")}
+                  style={{ fontSize: 12.5, marginLeft: 0 }}
+                  onClick={toggleCommentLike}
+                >
+                  {isLiked ? "♥" : "♡"} {likeCount > 0 ? likeCount : ""} Like
+                </span>
+              )}
+              {user && (
+                <span
+                  className="post-footer-link"
+                  style={{ fontSize: 12.5, marginLeft: 0 }}
+                  onClick={() => setReplying((v) => !v)}
+                >
+                  {replying ? "Cancel" : "Reply"}
+                </span>
+              )}
+              <span className="post-footer-link" style={{ fontSize: 12.5, marginLeft: 0 }} onClick={shareComment}>
+                {copied ? "Copied!" : "↗ Share"}
+              </span>
+              {replies.length > 0 && (
+                <span
+                  className="post-footer-link"
+                  style={{ fontSize: 12.5, marginLeft: 0 }}
+                  onClick={() => setShowReplies((v) => !v)}
+                >
+                  {showReplies ? "Hide" : "Show"} {replies.length} {replies.length === 1 ? "reply" : "replies"}
+                </span>
+              )}
+            </div>
 
-        {replying && (
-          <form onSubmit={submitReply} style={{ marginTop: 8 }}>
-            <ErrorBox message={err} />
-            <textarea
-              value={replyBody}
-              onChange={(e) => setReplyBody(e.target.value)}
-              placeholder={"Reply to " + (comment.author?.username || "this comment") + "…"}
-              style={{ marginBottom: 8, minHeight: 60 }}
-            />
-            <button className="btn btn-primary btn-sm" disabled={busy}>
-              {busy ? <Spinner /> : "Post reply"}
-            </button>
-          </form>
-        )}
+            {replying && (
+              <form onSubmit={submitReply} style={{ marginTop: 8 }}>
+                <ErrorBox message={err} />
+                <textarea
+                  value={replyBody}
+                  onChange={(e) => setReplyBody(e.target.value)}
+                  placeholder={"Reply to " + (comment.author?.username || "this comment") + "…"}
+                  style={{ marginBottom: 8, minHeight: 60 }}
+                />
+                <button className="btn btn-primary btn-sm" disabled={busy}>
+                  {busy ? <Spinner /> : "Post reply"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
       </div>
 
       {showReplies &&
@@ -137,6 +165,7 @@ function AnswerRow({ comment, postId }) {
   const [isLiked, setIsLiked] = useState(comment.is_liked || false);
   const [likeCount, setLikeCount] = useState(comment.like_count || 0);
   const [likeBusy, setLikeBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const toggleLike = async () => {
     if (!user || likeBusy) return;
@@ -156,25 +185,48 @@ function AnswerRow({ comment, postId }) {
     }
   };
 
+  const shareAnswer = async () => {
+    const url = window.location.origin + "/posts/" + postId + "#comment-" + comment.id;
+    try {
+      if (navigator.share) {
+        await navigator.share({ url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // cancelled share sheet / blocked clipboard — ignore
+    }
+  };
+
   return (
-    <div className="entry" style={{ paddingLeft: 0 }}>
-      <div className="entry-head" style={{ marginBottom: 2 }}>
-        <span
-          style={{ fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-          onClick={() => comment.author?.id && navigate("/profile/" + comment.author.id)}
-        >
-          {comment.author?.username || "Member"}
-          {comment.author?.is_verified && <span className="verified-tick">✓</span>}
-        </span>
-      </div>
-      <div className="entry-body">{comment.body}</div>
-      <div className="entry-meta">
-        <span>{timeAgo(comment.created_at)}</span>
-        {user && (
-          <span className={"post-footer-link" + (isLiked ? " liked" : "")} style={{ fontSize: 12.5, marginLeft: 0 }} onClick={toggleLike}>
-            {isLiked ? "♥" : "♡"} {likeCount > 0 ? likeCount : ""} Like
-          </span>
-        )}
+    <div className="entry comment-entry" id={"comment-" + comment.id}>
+      <div className="entry-head-row">
+        <Avatar name={comment.author?.username || "member"} src={comment.author?.avatar} size={30} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="entry-head" style={{ marginBottom: 2 }}>
+            <span
+              style={{ fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+              onClick={() => comment.author?.id && navigate("/profile/" + comment.author.id)}
+            >
+              {comment.author?.username || "Member"}
+              {comment.author?.is_verified && <span className="verified-tick">✓</span>}
+            </span>
+            <span className="subtle" style={{ fontSize: 12 }}>{timeAgo(comment.created_at)}</span>
+          </div>
+          <div className="entry-body">{comment.body}</div>
+          <div className="entry-meta">
+            {user && (
+              <span className={"post-footer-link" + (isLiked ? " liked" : "")} style={{ fontSize: 12.5, marginLeft: 0 }} onClick={toggleLike}>
+                {isLiked ? "♥" : "♡"} {likeCount > 0 ? likeCount : ""} Like
+              </span>
+            )}
+            <span className="post-footer-link" style={{ fontSize: 12.5, marginLeft: 0 }} onClick={shareAnswer}>
+              {copied ? "Copied!" : "↗ Share"}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -470,7 +522,9 @@ export default function PostDetail() {
               <PostExtras post={post} />
             </>
           )}
-          {post.image && <img src={post.image} alt="" className="post-image" loading="lazy" decoding="async" />}
+          {(post.image || (post.images && post.images.length > 0)) && (
+            <PostImageSlider images={post.images} image={post.image} className="post-image-slider" />
+          )}
           {(() => {
             const embed = extractVideoEmbed(post.body);
             return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;
@@ -535,13 +589,15 @@ export default function PostDetail() {
       )}
       {comments && post?.post_type === "question" &&
         comments.map((c) => (
-          <div className="card" style={{ marginBottom: 12 }} key={c.id}>
+          <div className="card comment-card" key={c.id}>
             <AnswerRow comment={c} postId={id} />
           </div>
         ))}
       {comments && post?.post_type !== "question" &&
         comments.map((c) => (
-          <CommentThread key={c.id} comment={c} postId={id} onReplyAdded={loadComments} />
+          <div className="card comment-card" key={c.id}>
+            <CommentThread comment={c} postId={id} onReplyAdded={loadComments} />
+          </div>
         ))}
     </div>
   );
