@@ -22,6 +22,8 @@ export default function MessageThread() {
   const [err, setErr] = useState("");
   const wsRef = useRef(null);
   const logRef = useRef(null);
+  const userIdRef = useRef(user?.id);
+  userIdRef.current = user?.id;
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +65,7 @@ export default function MessageThread() {
             // sent messages to "read" so the ticks update live.
             if (data.reader_id === userId) {
               setMessages((prev) =>
-                prev.map((m) => (senderId(m) === user.id ? { ...m, read_at: new Date().toISOString() } : m))
+                prev.map((m) => (senderId(m) === userIdRef.current ? { ...m, read_at: new Date().toISOString() } : m))
               );
             }
             return;

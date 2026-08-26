@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { Avatar, ErrorBox, Spinner, timeAgo } from "../lib/helpers.jsx";
+import { Avatar, ErrorBox, Spinner } from "../lib/helpers.jsx";
 
 const RSVP_OPTS = [
   { value: "going", label: "Going", icon: "✅" },

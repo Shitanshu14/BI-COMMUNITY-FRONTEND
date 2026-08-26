@@ -490,6 +490,24 @@ h3 { font-size: 16px; }
   color: #fff;
   box-shadow: var(--glow-primary-soft);
 }
+/* Type-colored composer pills — Question/Post/Poll (top level) and
+   Knowledge/Project/Resource (Post subtypes) each pick up the exact same
+   accent color as their post-card/badge elsewhere (see the --type-* vars
+   and .post-card[data-ptype] rules below), so the composer visually
+   previews what the card will look like before it's even posted. */
+.pill-btn[data-ptype]:hover { border-color: var(--ptype-btn-color, var(--primary)); color: var(--ptype-btn-color, var(--ink)); }
+.pill-btn[data-ptype].active {
+  background: var(--ptype-btn-color, var(--accent-gradient));
+  box-shadow: 0 0 0 3px var(--ptype-btn-soft, var(--glow-primary-soft));
+  color: #fff;
+}
+.pill-btn[data-ptype="question"] { --ptype-btn-color: var(--type-question); --ptype-btn-soft: var(--type-question-soft); }
+.pill-btn[data-ptype="poll"] { --ptype-btn-color: var(--type-poll); --ptype-btn-soft: var(--type-poll-soft); }
+.pill-btn[data-ptype="post"] { --ptype-btn-color: var(--type-post); --ptype-btn-soft: var(--type-post-soft); }
+.pill-btn[data-ptype="knowledge"] { --ptype-btn-color: var(--type-knowledge); --ptype-btn-soft: var(--type-knowledge-soft); }
+.pill-btn[data-ptype="project"] { --ptype-btn-color: var(--type-project); --ptype-btn-soft: var(--type-project-soft); }
+.pill-btn[data-ptype="resource"] { --ptype-btn-color: var(--type-resource); --ptype-btn-soft: var(--type-resource-soft); }
+.pill-btn-sm.active { box-shadow: 0 0 0 2px var(--ptype-btn-soft, var(--glow-primary-soft)); }
 .pill-btn-sm { padding: 5px 11px; font-size: 11.5px; }
 
 /* Subtype pills shown inside the composer when top type = "Post" */
@@ -500,12 +518,14 @@ h3 { font-size: 16px; }
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--primary-ink);
-  background: var(--primary-soft);
+  color: var(--ptype-color, var(--primary-ink));
+  background: var(--ptype-soft, var(--primary-soft));
   padding: 7px 12px;
   border-radius: var(--radius);
   margin-bottom: 18px;
 }
+.composer-fixed-type[data-ptype="question"] { --ptype-color: var(--type-question); --ptype-soft: var(--type-question-soft); }
+.composer-fixed-type[data-ptype="poll"] { --ptype-color: var(--type-poll); --ptype-soft: var(--type-poll-soft); }
 
 /* Feed filter tabs (All / Questions / Posts / Polls) */
 .filter-tabs {

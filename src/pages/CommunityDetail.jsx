@@ -16,13 +16,14 @@ export default function CommunityDetail() {
   const { user } = useAuth();
   const [community, setCommunity] = useState(null);
   const [posts, setPosts] = useState(null);
+  const [postsNext, setPostsNext] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [linkRows, setLinkRows] = useState([{ label: "", url: "" }]);
   const [pollOptions, setPollOptions] = useState(["", ""]);
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+
   const [galleryFiles, setGalleryFiles] = useState([]); // [{file, url}] — up to 6, sent as repeated `images` fields
   const [busy, setBusy] = useState(false);
   const [likeBusy, setLikeBusy] = useState(null);
@@ -66,8 +67,27 @@ export default function CommunityDetail() {
       ]);
       setCommunity(c);
       setPosts(Array.isArray(p) ? p : p.results || []);
+      setPostsNext(Array.isArray(p) ? null : p.next || null);
     } catch (ex) {
       setErr(ex.message);
+    }
+  };
+
+  const loadMorePosts = async () => {
+    if (!postsNext || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      // postsNext is DRF's absolute URL (http://host/api/posts/?...); the
+      // api() helper only accepts same-origin paths, so strip the host —
+      // same fix as SupportDashboard's pagination.
+      const path = postsNext.replace(/^https?:\/\/[^/]+/, "");
+      const p = await api(path);
+      setPosts((prev) => [...prev, ...(p.results || [])]);
+      setPostsNext(p.next || null);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -146,7 +166,6 @@ export default function CommunityDetail() {
       fd.append("title", form.title);
       fd.append("body", form.body);
       fd.append("community", id);
-      if (image) fd.append("image", image);
       galleryFiles.forEach(({ file }) => fd.append("images", file));
       (form.tags || []).forEach((t) => fd.append("tags", t));
       if (form.post_type === "poll") {
@@ -162,8 +181,6 @@ export default function CommunityDetail() {
       setForm(EMPTY_FORM);
       setLinkRows([{ label: "", url: "" }]);
       setPollOptions(["", ""]);
-      setImage(null);
-      setImagePreview(null);
       galleryFiles.forEach((g) => URL.revokeObjectURL(g.url));
       setGalleryFiles([]);
       setShowForm(false);
@@ -305,6 +322,7 @@ export default function CommunityDetail() {
                     type="button"
                     key={t.value}
                     title={t.hint}
+                    data-ptype={t.value}
                     className={"pill-btn" + (groupOf(form.post_type) === t.value && showForm ? " active" : "")}
                     onClick={() => pickType(t.value)}
                   >
@@ -316,7 +334,7 @@ export default function CommunityDetail() {
           )}
 
           {showForm && community?.is_member && !community?.is_on_hold && (
-            <form onSubmit={create} className="card" style={{ marginBottom: 18 }}>
+            <form onSubmit={create} className="card" data-ptype={typeColorKey(form)} style={{ marginBottom: 18 }}>
               <label>Type</label>
               {form.post_type === "post" ? (
                 <div className="composer-subtypes">
@@ -325,6 +343,7 @@ export default function CommunityDetail() {
                       type="button"
                       key={s.value}
                       title={s.hint}
+                      data-ptype={s.value.toLowerCase()}
                       className={"pill-btn pill-btn-sm" + (form.tags?.[0] === s.value ? " active" : "")}
                       onClick={() => setForm({ ...form, tags: [s.value] })}
                     >
@@ -333,7 +352,7 @@ export default function CommunityDetail() {
                   ))}
                 </div>
               ) : (
-                <div className="composer-fixed-type">
+                <div className="composer-fixed-type" data-ptype={typeColorKey(form)}>
                   <span>{typeIcon(form)}</span> {groupLabel(form)}
                 </div>
               )}
@@ -436,8 +455,6 @@ export default function CommunityDetail() {
                   className="btn"
                   onClick={() => {
                     setShowForm(false);
-                    setImage(null);
-                    setImagePreview(null);
                     galleryFiles.forEach((g) => URL.revokeObjectURL(g.url));
                     setGalleryFiles([]);
                   }}
@@ -665,6 +682,18 @@ export default function CommunityDetail() {
               </div>
             ));
           })()}
+
+          {postsNext && !search.trim() && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: "100%", marginTop: 4 }}
+              onClick={loadMorePosts}
+              disabled={loadingMore}
+            >
+              {loadingMore ? <Spinner /> : "Load more posts"}
+            </button>
+          )}
         </div>
 
         {community && (

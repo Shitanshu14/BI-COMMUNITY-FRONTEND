@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { ErrorBox, Avatar, Skeleton, timeAgo } from "../lib/helpers.jsx";
+import { ErrorBox, Avatar, Skeleton, Spinner, timeAgo } from "../lib/helpers.jsx";
 
 // Where a notification's `target_id` points, by verb — mirrors exactly how
 // each verb is created (see backend create_notification.delay call sites:
@@ -13,6 +13,7 @@ const TARGET_ROUTE = {
   comment_liked: (n) => "/posts/" + n.target_id,
   post_commented: (n) => "/posts/" + n.target_id,
   comment_replied: (n) => "/posts/" + n.target_id,
+  answer_accepted: (n) => "/posts/" + n.target_id,
   community_joined: (n) => "/communities/" + n.target_id,
   circle_invited: (n) => "/circles/" + n.target_id,
   circle_invite_accepted: (n) => "/circles/" + n.target_id,
@@ -38,6 +39,7 @@ const VERB_ICON = {
   comment_liked: "❤️",
   post_commented: "💬",
   comment_replied: "💬",
+  answer_accepted: "✅",
   community_joined: "🧑‍🤝‍🧑",
   circle_invited: "🎯",
   circle_invite_accepted: "🎯",
@@ -54,13 +56,32 @@ const VERB_ICON = {
 export default function Notifications() {
   const navigate = useNavigate();
   const [list, setList] = useState(null);
+  const [next, setNext] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
   const [markingAll, setMarkingAll] = useState(false);
 
   const load = () => {
     api("/api/notifications/")
-      .then((res) => setList(Array.isArray(res) ? res : res.results || []))
+      .then((res) => {
+        setList(Array.isArray(res) ? res : res.results || []);
+        setNext(Array.isArray(res) ? null : res.next || null);
+      })
       .catch((ex) => setErr(ex.message));
+  };
+
+  const loadMore = async () => {
+    if (!next || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await api(next.replace(/^https?:\/\/[^/]+/, ""));
+      setList((prev) => [...prev, ...(res.results || [])]);
+      setNext(res.next || null);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   useEffect(load, []);
@@ -160,6 +181,18 @@ export default function Notifications() {
             {!n.is_read && <span className="unread-dot" />}
           </div>
         ))}
+
+      {next && (
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ width: "100%", marginTop: 12 }}
+          onClick={loadMore}
+          disabled={loadingMore}
+        >
+          {loadingMore ? <Spinner /> : "Load more"}
+        </button>
+      )}
     </div>
   );
 }

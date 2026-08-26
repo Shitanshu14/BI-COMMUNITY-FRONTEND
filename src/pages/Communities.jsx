@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { ErrorBox, Avatar, Skeleton } from "../lib/helpers.jsx";
+import { ErrorBox, Avatar, Skeleton, Spinner } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import TrendingCarousel from "../components/TrendingCarousel.jsx";
 
@@ -9,6 +9,8 @@ export default function Communities() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [list, setList] = useState(null);
+  const [next, setNext] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
   const [query, setQuery] = useState("");
   const [joinBusy, setJoinBusy] = useState(null);
@@ -17,9 +19,28 @@ export default function Communities() {
   const load = async (search = "") => {
     try {
       const path = "/api/communities/" + (search ? "?search=" + encodeURIComponent(search) : "");
-      setList(await api(path));
+      const res = await api(path);
+      setList(res);
+      setNext(Array.isArray(res) ? null : res.next || null);
     } catch (ex) {
       setErr(ex.message);
+    }
+  };
+
+  const loadMore = async () => {
+    if (!next || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await api(next.replace(/^https?:\/\/[^/]+/, ""));
+      setList((prev) => {
+        const prevItems = Array.isArray(prev) ? prev : prev.results || [];
+        return { ...res, results: [...prevItems, ...(res.results || [])] };
+      });
+      setNext(res.next || null);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -182,6 +203,18 @@ export default function Communities() {
             </div>
           ))}
         </div>
+      )}
+
+      {next && (
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ width: "100%", marginTop: 16 }}
+          onClick={loadMore}
+          disabled={loadingMore}
+        >
+          {loadingMore ? <Spinner /> : "Load more communities"}
+        </button>
       )}
     </div>
   );

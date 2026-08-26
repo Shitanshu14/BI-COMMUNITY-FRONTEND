@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { ErrorBox, Avatar, timeAgo, VideoEmbed } from "../lib/helpers.jsx";
+import { ErrorBox, Avatar, Spinner, timeAgo, VideoEmbed } from "../lib/helpers.jsx";
 import { typeIcon, subtypeLabel, groupLabel, typeColorKey } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
@@ -9,6 +9,8 @@ import PostExtras from "../components/PostExtras.jsx";
 export default function SavedPosts() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState(null);
+  const [next, setNext] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
   const [saveBusy, setSaveBusy] = useState(null);
 
@@ -16,8 +18,23 @@ export default function SavedPosts() {
     try {
       const res = await api("/api/posts/?saved=true");
       setPosts(Array.isArray(res) ? res : res.results || []);
+      setNext(Array.isArray(res) ? null : res.next || null);
     } catch (ex) {
       setErr(ex.message);
+    }
+  };
+
+  const loadMore = async () => {
+    if (!next || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await api(next.replace(/^https?:\/\/[^/]+/, ""));
+      setPosts((prev) => [...prev, ...(res.results || [])]);
+      setNext(res.next || null);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -101,6 +118,18 @@ export default function SavedPosts() {
             </div>
           </div>
         ))}
+
+      {next && (
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ width: "100%", marginTop: 8 }}
+          onClick={loadMore}
+          disabled={loadingMore}
+        >
+          {loadingMore ? <Spinner /> : "Load more"}
+        </button>
+      )}
     </div>
   );
 }

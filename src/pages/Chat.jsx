@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { api, WS_BASE } from "../lib/api.js";
 import { timeAgo, Avatar } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -19,7 +19,6 @@ function senderId(m) {
 export default function Chat({ kind = "community" }) {
   const { id: roomId } = useParams();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const isCircle = kind === "circle";
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("connecting");

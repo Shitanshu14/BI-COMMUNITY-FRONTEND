@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../lib/api.js";
 import { RoleBadge, timeAgo, Avatar, ErrorBox, Spinner, VideoEmbed } from "../lib/helpers.jsx";
-import { typeIcon, groupLabel, subtypeLabel, typeColorKey } from "../lib/postTypes.js";
+import { typeIcon, groupLabel, typeColorKey } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
 
@@ -12,18 +12,38 @@ import PostExtras from "../components/PostExtras.jsx";
 function SavedTab() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState(null);
+  const [next, setNext] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     api("/api/posts/?saved=true")
-      .then((res) => !cancelled && setPosts(Array.isArray(res) ? res : res.results || []))
+      .then((res) => {
+        if (cancelled) return;
+        setPosts(Array.isArray(res) ? res : res.results || []);
+        setNext(Array.isArray(res) ? null : res.next || null);
+      })
       .catch((ex) => !cancelled && setErr(ex.message));
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const loadMore = async () => {
+    if (!next || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await api(next.replace(/^https?:\/\/[^/]+/, ""));
+      setPosts((prev) => [...prev, ...(res.results || [])]);
+      setNext(res.next || null);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const unsave = async (postId) => {
     setBusy(postId);
@@ -75,6 +95,18 @@ function SavedTab() {
             </div>
           </div>
         ))}
+
+      {next && (
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ width: "100%", marginTop: 8 }}
+          onClick={loadMore}
+          disabled={loadingMore}
+        >
+          {loadingMore ? <Spinner /> : "Load more"}
+        </button>
+      )}
     </>
   );
 }
@@ -210,6 +242,8 @@ export default function Profile() {
 
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState(null);
+  const [postsNext, setPostsNext] = useState(null);
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
   const [verif, setVerif] = useState(null);
   const [followBusy, setFollowBusy] = useState(false);
   const [blockBusy, setBlockBusy] = useState(false);
@@ -235,8 +269,23 @@ export default function Profile() {
       setProfile(p);
       const postsRes = await api("/api/posts/?author=" + profileId);
       setPosts(Array.isArray(postsRes) ? postsRes : postsRes.results || []);
+      setPostsNext(Array.isArray(postsRes) ? null : postsRes.next || null);
     } catch (ex) {
       setErr(ex.message);
+    }
+  };
+
+  const loadMorePosts = async () => {
+    if (!postsNext || loadingMorePosts) return;
+    setLoadingMorePosts(true);
+    try {
+      const res = await api(postsNext.replace(/^https?:\/\/[^/]+/, ""));
+      setPosts((prev) => [...prev, ...(res.results || [])]);
+      setPostsNext(res.next || null);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setLoadingMorePosts(false);
     }
   };
 
@@ -519,6 +568,17 @@ export default function Profile() {
                 </div>
               ))}
           </div>
+          {postsNext && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: "100%", marginTop: 12 }}
+              onClick={loadMorePosts}
+              disabled={loadingMorePosts}
+            >
+              {loadingMorePosts ? <Spinner /> : "Load more posts"}
+            </button>
+          )}
         </>
       )}
 

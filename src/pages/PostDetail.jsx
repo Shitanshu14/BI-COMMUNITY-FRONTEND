@@ -159,13 +159,26 @@ function CommentThread({ comment, postId, onReplyAdded, depth = 0 }) {
   );
 }
 
-function AnswerRow({ comment, postId }) {
+function AnswerRow({ comment, postId, canAccept, onAccepted, onError }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(comment.is_liked || false);
   const [likeCount, setLikeCount] = useState(comment.like_count || 0);
   const [likeBusy, setLikeBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [acceptBusy, setAcceptBusy] = useState(false);
+
+  const acceptAnswer = async () => {
+    setAcceptBusy(true);
+    try {
+      await api("/api/posts/" + postId + "/comments/" + comment.id + "/accept/", { method: "POST" });
+      onAccepted(comment.id);
+    } catch (ex) {
+      onError(ex.message);
+    } finally {
+      setAcceptBusy(false);
+    }
+  };
 
   const toggleLike = async () => {
     if (!user || likeBusy) return;
@@ -202,6 +215,7 @@ function AnswerRow({ comment, postId }) {
 
   return (
     <div className="entry comment-entry" id={"comment-" + comment.id}>
+      {comment.is_accepted && <div className="qa-accepted-badge" style={{ marginBottom: 8 }}>✓ Accepted answer</div>}
       <div className="entry-head-row">
         <Avatar name={comment.author?.username || "member"} src={comment.author?.avatar} size={30} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -225,6 +239,15 @@ function AnswerRow({ comment, postId }) {
             <span className="post-footer-link" style={{ fontSize: 12.5, marginLeft: 0 }} onClick={shareAnswer}>
               {copied ? "Copied!" : "↗ Share"}
             </span>
+            {canAccept && !comment.is_accepted && (
+              <span
+                className="post-footer-link"
+                style={{ fontSize: 12.5, marginLeft: 0, opacity: acceptBusy ? 0.6 : 1 }}
+                onClick={acceptBusy ? undefined : acceptAnswer}
+              >
+                {acceptBusy ? "Accepting…" : "✓ Mark as accepted"}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -360,6 +383,15 @@ export default function PostDetail() {
     } finally {
       setSolveBusy(false);
     }
+  };
+
+  const acceptAnswer = (commentId) => {
+    // The accept POST already did the work server-side (unset any previous
+    // accepted comment, set this one, and flip the post to solved) — this
+    // just mirrors that same result into local state, same pattern as
+    // CircleQuestionDetail.acceptAnswer, so there's no full reload needed.
+    setPost((prev) => ({ ...prev, is_solved: true }));
+    setComments((prev) => prev.map((c) => ({ ...c, is_accepted: c.id === commentId })));
   };
 
   const vote = async (optionId) => {
@@ -589,8 +621,14 @@ export default function PostDetail() {
       )}
       {comments && post?.post_type === "question" &&
         comments.map((c) => (
-          <div className="card comment-card" key={c.id}>
-            <AnswerRow comment={c} postId={id} />
+          <div className={"card comment-card" + (c.is_accepted ? " qa-answer-accepted" : "")} key={c.id}>
+            <AnswerRow
+              comment={c}
+              postId={id}
+              canAccept={isAuthor}
+              onAccepted={acceptAnswer}
+              onError={setErr}
+            />
           </div>
         ))}
       {comments && post?.post_type !== "question" &&

@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { ErrorBox, Avatar, timeAgo } from "../lib/helpers.jsx";
+import { ErrorBox, Avatar, Spinner, timeAgo } from "../lib/helpers.jsx";
 
 export default function Circles() {
   const navigate = useNavigate();
   const [circles, setCircles] = useState(null);
+  const [circlesNext, setCirclesNext] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [invites, setInvites] = useState(null);
   const [err, setErr] = useState("");
   const [showCreate, setShowCreate] = useState(false);
@@ -21,9 +23,24 @@ export default function Circles() {
         api("/api/circles/invites/"),
       ]);
       setCircles(Array.isArray(c) ? c : c.results || []);
+      setCirclesNext(Array.isArray(c) ? null : c.next || null);
       setInvites(Array.isArray(i) ? i : i.results || []);
     } catch (ex) {
       setErr(ex.message);
+    }
+  };
+
+  const loadMoreCircles = async () => {
+    if (!circlesNext || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await api(circlesNext.replace(/^https?:\/\/[^/]+/, ""));
+      setCircles((prev) => [...prev, ...(res.results || [])]);
+      setCirclesNext(res.next || null);
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -172,6 +189,18 @@ export default function Circles() {
           </div>
         ))}
       </div>
+
+      {circlesNext && (
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ width: "100%", marginTop: 16 }}
+          onClick={loadMoreCircles}
+          disabled={loadingMore}
+        >
+          {loadingMore ? <Spinner /> : "Load more circles"}
+        </button>
+      )}
     </div>
   );
 }
