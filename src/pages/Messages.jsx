@@ -109,7 +109,7 @@ export default function Messages() {
       )}
 
       {rows &&
-        rows.map((r) => (
+        rows.filter((r) => r.user).map((r) => (
           <div className="user-row" key={r.user.id} onClick={() => navigate("/messages/" + r.user.id)}>
             <Avatar name={r.user.username} src={r.user.avatar} size={44} />
             <div className="user-row-meta">

@@ -9,12 +9,13 @@ export function useTheme() {
 function getInitialTheme() {
   const saved = localStorage.getItem("bicommunity-theme");
   if (saved === "light" || saved === "dark") return saved;
-  // Respect the OS/browser preference the first time, default to dark
-  // (this app's native look) if there's no signal either way.
-  if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
-    return "light";
+  // Respect the OS/browser preference the first time, default to light
+  // (this app's native look, matching the reference design) if there's
+  // no signal either way.
+  if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    return "dark";
   }
-  return "dark";
+  return "light";
 }
 
 export function ThemeProvider({ children }) {

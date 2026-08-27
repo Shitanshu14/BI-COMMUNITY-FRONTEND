@@ -3,27 +3,27 @@
    Concept: light SaaS workspace, indigo-blue accent
    =========================================================== */
 :root {
-  --bg: #08070d;
-  --surface: #130f1c;
-  --surface-soft: #1b1628;
-  --border: #2c2540;
-  --border-soft: #221c32;
+  --bg: #0a0e1f;
+  --surface: #11162b;
+  --surface-soft: #171d38;
+  --border: #262f52;
+  --border-soft: #1c2340;
 
   --ink: #ffffff;
-  --ink-soft: #a9a2c4;
-  --ink-faint: #6f6890;
+  --ink-soft: #a3aad0;
+  --ink-faint: #6b7299;
 
-  /* Geneva-style vibrant duo: electric violet -> hot pink, with an
-     orange third stop reserved for gradient accents (brand text,
-     buttons, bubbles) so the app reads bold and playful, not flat. */
-  --primary: #7c5cff;
-  --primary-ink: #a58aff;
-  --primary-soft: #241a4d;
-  --primary-soft-ink: #cabbff;
-  --primary-2: #ff4fa3;
-  --primary-3: #ff9d4d;
-  --accent-gradient: linear-gradient(135deg, #7c5cff 0%, #ff4fa3 60%, #ff9d4d 100%);
-  --accent-gradient-soft: linear-gradient(135deg, color-mix(in srgb, #7c5cff 16%, transparent), color-mix(in srgb, #ff4fa3 16%, transparent));
+  /* Indigo/blue-violet duo — matches the reference app's sky-blue to
+     lavender hero gradient, kept bold via a violet-pink third stop for
+     gradient accents (brand text, buttons, bubbles). */
+  --primary: #5b7fff;
+  --primary-ink: #8aa3ff;
+  --primary-soft: #1c2a5e;
+  --primary-soft-ink: #b7c6ff;
+  --primary-2: #8b6cff;
+  --primary-3: #4fc3f7;
+  --accent-gradient: linear-gradient(135deg, #5b7fff 0%, #8b6cff 60%, #4fc3f7 100%);
+  --accent-gradient-soft: linear-gradient(135deg, color-mix(in srgb, #5b7fff 16%, transparent), color-mix(in srgb, #8b6cff 16%, transparent));
 
   --verified: #3ddc97;
   --verified-soft: #0f2e22;
@@ -34,7 +34,7 @@
 
   /* Poll bar accents — cycled per option so multi-option polls read at a
      glance instead of every bar being the same flat purple. */
-  --poll-1: #a58aff;
+  --poll-1: #8aa3ff;
   --poll-2: #3ddc97;
   --poll-3: #ffb84d;
   --poll-4: #ff6b8a;
@@ -76,25 +76,27 @@
    purple/verified/danger/warn accents, just flipped surfaces/ink so it
    reads correctly on a light background. */
 html[data-theme="light"] {
-  --bg: #f8f6fc;
+  --bg: #eef1fc;
   --surface: #ffffff;
-  --surface-soft: #f2eefb;
-  --border: #e5e0f3;
-  --border-soft: #ede8fa;
+  --surface-soft: #f3f5fd;
+  --border: #e3e7f7;
+  --border-soft: #ecefFA;
 
-  --ink: #1a1730;
-  --ink-soft: #5c5878;
-  --ink-faint: #928da9;
+  --ink: #1a1e33;
+  --ink-soft: #5c6284;
+  --ink-faint: #9298b8;
 
-  --primary: #6c4eea;
-  --primary-ink: #5638d6;
-  --primary-soft: #eee7fe;
-  --primary-soft-ink: #4c30c7;
+  /* Sky-blue -> lavender indigo, matching the reference app's hero
+     gradient and pill-button accents. */
+  --primary: #4f6ef7;
+  --primary-ink: #3d55d6;
+  --primary-soft: #e8ecfe;
+  --primary-soft-ink: #3d55d6;
 
-  --primary-2: #e0389e;
-  --primary-3: #e2822c;
-  --accent-gradient: linear-gradient(135deg, #6c4eea 0%, #e0389e 60%, #e2822c 100%);
-  --accent-gradient-soft: linear-gradient(135deg, color-mix(in srgb, #6c4eea 10%, transparent), color-mix(in srgb, #e0389e 10%, transparent));
+  --primary-2: #8b6cff;
+  --primary-3: #35b6e8;
+  --accent-gradient: linear-gradient(135deg, #4f6ef7 0%, #8b6cff 60%, #35b6e8 100%);
+  --accent-gradient-soft: linear-gradient(135deg, color-mix(in srgb, #4f6ef7 10%, transparent), color-mix(in srgb, #8b6cff 10%, transparent));
 
   --verified: #1f9d78;
   --verified-soft: #e3f7ef;
@@ -103,11 +105,11 @@ html[data-theme="light"] {
   --warn: #b9820f;
   --warn-soft: #fbf0da;
 
-  --poll-1: #6c4eea;
+  --poll-1: #4f6ef7;
   --poll-2: #17a398;
   --poll-3: #dd8a1f;
   --poll-4: #e0554b;
-  --poll-5: #2e86de;
+  --poll-5: #35b6e8;
 
   --type-question: var(--warn);
   --type-question-soft: var(--warn-soft);
@@ -137,9 +139,9 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   background:
-    radial-gradient(1000px 480px at 100% -10%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 60%),
-    radial-gradient(820px 460px at -8% 8%, color-mix(in srgb, var(--primary-2) 12%, transparent), transparent 55%),
-    radial-gradient(700px 420px at 60% 100%, color-mix(in srgb, var(--primary-3) 8%, transparent), transparent 55%),
+    radial-gradient(1000px 480px at 100% -10%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 60%),
+    radial-gradient(820px 460px at -8% 8%, color-mix(in srgb, var(--primary-2) 14%, transparent), transparent 55%),
+    radial-gradient(700px 420px at 60% 100%, color-mix(in srgb, var(--primary-3) 10%, transparent), transparent 55%),
     var(--bg);
   background-attachment: fixed;
   color: var(--ink);
@@ -443,6 +445,11 @@ h3 { font-size: 16px; }
   transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
 .community-card:hover { box-shadow: var(--shadow-md), var(--glow-primary-soft); border-color: var(--primary-soft-ink); transform: translateY(-1px); }
+/* Circle cards reuse the community-card layout but carry the pink
+   circle accent (left edge + hover glow) so Circles never get mistaken
+   for public Communities at a glance, in a grid or side by side. */
+.circle-card { border-left: 3px solid var(--primary-2); }
+.circle-card:hover { box-shadow: var(--shadow-md), 0 8px 24px -12px color-mix(in srgb, var(--primary-2) 45%, transparent); border-color: color-mix(in srgb, var(--primary-2) 45%, transparent); }
 .community-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .community-card .entry-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; }
 .community-card-desc { color: var(--ink-soft); font-size: 13.5px; margin: 6px 0 14px; min-height: 20px; }
@@ -659,6 +666,135 @@ h3 { font-size: 16px; }
 .profile-stat-clickable:hover { color: var(--primary-ink); }
 .profile-stats strong { font-size: 16px; color: var(--ink); margin-right: 5px; }
 
+/* -----------------------------------------------------------
+   Profile hero — centered avatar-ring header + big stat row +
+   pill actions + icon tabs, matching the reference design
+   (rounded glass card, gradient ring, prominent numbers).
+   ----------------------------------------------------------- */
+.profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px 26px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.profile-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent-gradient-soft);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.profile-hero > * { position: relative; z-index: 1; }
+.profile-hero-avatar-wrap {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  padding: 4px;
+  background: var(--accent-gradient);
+  margin-bottom: 14px;
+}
+.profile-hero-avatar-wrap .avatar {
+  width: 100% !important;
+  height: 100% !important;
+  border: 3px solid var(--surface);
+}
+.profile-hero-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+}
+.profile-hero-headline { color: var(--ink-soft); font-size: 13.5px; margin: 0 0 20px; max-width: 380px; }
+.profile-hero-stats {
+  display: flex;
+  gap: 36px;
+  padding: 4px 0 22px;
+}
+.profile-hero-stats > div { cursor: default; }
+.profile-hero-stat-clickable { cursor: pointer; transition: transform 0.12s ease; }
+.profile-hero-stat-clickable:hover { transform: translateY(-1px); }
+.profile-hero-stats strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.profile-hero-stats span { font-size: 12px; color: var(--ink-faint); font-weight: 600; }
+.profile-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.profile-hero-actions .btn { border-radius: 100px; padding: 10px 22px; }
+.profile-hero-actions .btn-primary { border-radius: 100px; }
+
+/* Icon tabs (About / Photos / Questions style) — underline-active,
+   centered, replaces the old left-aligned pill-btn row on Profile. */
+.profile-icon-tabs {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .profile-icon-tabs {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .profile-icon-tabs::-webkit-scrollbar { display: none; }
+  .profile-icon-tab { flex-shrink: 0; white-space: nowrap; }
+}
+.profile-icon-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  color: var(--ink-faint);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.14s ease, border-color 0.14s ease;
+}
+.profile-icon-tab:hover { color: var(--ink); }
+.profile-icon-tab.active { color: var(--primary-ink); border-bottom-color: var(--primary); }
+
+.profile-about-card { border-radius: var(--radius-lg); }
+.profile-about-row { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border-soft); }
+.profile-about-row:last-child { border-bottom: none; padding-bottom: 0; }
+.profile-about-row:first-of-type { padding-top: 0; }
+.profile-about-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+.profile-about-label { font-size: 11.5px; color: var(--ink-faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px; }
+
 .profile-post-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -685,7 +821,7 @@ h3 { font-size: 16px; }
   text-align: center;
 }
 .profile-post-tile-fallback span { font-size: 26px; }
-.profile-post-tile-title { font-size: 11.5px; color: var(--ink-soft); line-height: 1.3; }
+.profile-post-tile-title { font-size: 12.5px; color: var(--ink); font-weight: 600; line-height: 1.35; -webkit-line-clamp: 4; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
 .profile-post-tile-overlay {
   position: absolute;
   inset: 0;
@@ -990,6 +1126,19 @@ h3 { font-size: 16px; }
 .badge-tag { color: var(--ink-soft); background: var(--surface-soft); border: 1px solid var(--border); text-transform: capitalize; }
 .badge-solved { color: var(--verified); background: var(--verified-soft); }
 .badge-unsolved { color: #b8860b; background: color-mix(in srgb, #b8860b 14%, transparent); }
+/* Circles are private/invite-only groups, visually distinct from public
+   Communities: badge uses the pink accent (--primary-2) instead of the
+   neutral role-pill gray, so a feed/grid mixing both reads instantly. */
+.badge-circle { color: var(--primary-2); background: color-mix(in srgb, var(--primary-2) 14%, transparent); border: 1px solid color-mix(in srgb, var(--primary-2) 30%, transparent); }
+
+/* -----------------------------------------------------------
+   Error boundary — replaces a blank white screen when a page
+   crashes on unexpected/missing API data.
+   ----------------------------------------------------------- */
+.error-boundary { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 20px; text-align: center; }
+.error-boundary-icon { font-size: 32px; }
+.error-boundary-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--ink); }
+.error-boundary-sub { color: var(--ink-faint); font-size: 13px; max-width: 360px; }
 
 /* -----------------------------------------------------------
    Post type extras — Knowledge read-time, Resource link card,
@@ -1255,7 +1404,7 @@ h3 { font-size: 16px; }
   font-weight: 600;
   font-size: 13.5px;
   padding: 10px 18px;
-  border-radius: var(--radius);
+  border-radius: 100px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--ink);

@@ -398,9 +398,9 @@ export default function Profile() {
 
   return (
     <div className="page">
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
-        <div className="profile-avatar-wrap">
-          <Avatar name={profile.username} src={avatarPreview || profile.avatar} size={72} />
+      <div className="profile-hero">
+        <div className="profile-hero-avatar-wrap">
+          <Avatar name={profile.username} src={avatarPreview || profile.avatar} size={96} />
           {isOwnProfile && editing && (
             <label className="profile-avatar-edit" title="Change profile picture">
               📷
@@ -408,77 +408,77 @@ export default function Profile() {
             </label>
           )}
         </div>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div className="eyebrow" style={{ marginBottom: 4 }}>{isOwnProfile ? "Your profile" : "Profile"}</div>
-          <h1 style={{ marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
-            {profile.username}
-            {profile.is_verified && <span className="verified-tick" style={{ fontSize: 18 }}>✓</span>}
-          </h1>
-          <RoleBadge role={profile.role} isVerified={profile.is_verified} />
+        <h1 className="profile-hero-name">
+          {profile.username}
+          {profile.is_verified && <span className="verified-tick" style={{ fontSize: 18 }}>✓</span>}
+        </h1>
+        <p className="profile-hero-headline">{profile.headline || "No headline yet."}</p>
+
+        <div className="profile-hero-stats">
+          <div>
+            <strong>{profile.post_count ?? 0}</strong> <span>Posts</span>
+          </div>
+          <div className="profile-hero-stat-clickable" onClick={() => setListModal("followers")}>
+            <strong>{profile.follower_count ?? 0}</strong> <span>Followers</span>
+          </div>
+          <div className="profile-hero-stat-clickable" onClick={() => setListModal("following")}>
+            <strong>{profile.following_count ?? 0}</strong> <span>Following</span>
+          </div>
+          <div>
+            <strong>{profile.communities?.length ?? 0}</strong> <span>Communities</span>
+          </div>
         </div>
-        {!isOwnProfile && !profile.has_blocked_me && (
-          <div style={{ display: "flex", gap: 8 }}>
-            {!profile.is_blocked && (
+
+        <div className="profile-hero-actions">
+          {!isOwnProfile && !profile.has_blocked_me && (
+            <>
+              {!profile.is_blocked && (
+                <button
+                  className={"btn" + (profile.follow_status ? "" : " btn-primary")}
+                  onClick={toggleFollow}
+                  disabled={followBusy}
+                >
+                  {followBusy ? <Spinner /> : followLabel}
+                </button>
+              )}
+              {!profile.is_blocked && (
+                <button className="btn btn-sm" onClick={() => navigate("/messages/" + profile.id)}>
+                  ✉️ Message
+                </button>
+              )}
               <button
-                className={"btn" + (profile.follow_status ? "" : " btn-primary")}
-                onClick={toggleFollow}
-                disabled={followBusy}
+                className="btn btn-sm"
+                onClick={toggleBlock}
+                disabled={blockBusy}
+                style={profile.is_blocked ? {} : { color: "var(--danger)" }}
               >
-                {followBusy ? <Spinner /> : followLabel}
+                {blockBusy ? <Spinner /> : profile.is_blocked ? "Unblock" : "Block"}
               </button>
-            )}
-            {!profile.is_blocked && (
-              <button className="btn btn-sm" onClick={() => navigate("/messages/" + profile.id)}>
-                ✉️ Message
+            </>
+          )}
+          {!isOwnProfile && profile.has_blocked_me && (
+            <span className="badge badge-role">Unavailable</span>
+          )}
+          {isOwnProfile && (
+            <>
+              <button className="btn btn-primary" onClick={() => setEditing((v) => !v)}>
+                {editing ? "Cancel" : "Edit profile"}
               </button>
-            )}
-            <button
-              className="btn btn-sm"
-              onClick={toggleBlock}
-              disabled={blockBusy}
-              style={profile.is_blocked ? {} : { color: "var(--danger)" }}
-            >
-              {blockBusy ? <Spinner /> : profile.is_blocked ? "Unblock" : "Block"}
-            </button>
-          </div>
-        )}
-        {!isOwnProfile && profile.has_blocked_me && (
-          <span className="badge badge-role">Unavailable</span>
-        )}
-        {isOwnProfile && (
-          <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn" onClick={() => setEditing((v) => !v)}>
-              {editing ? "Cancel" : "Edit profile"}
-            </button>
-            {!profile.is_verified && (
-              <button className="btn" onClick={() => setTab("verify")}>
-                ✓ Get verified
-              </button>
-            )}
-          </div>
-        )}
+              {!profile.is_verified && (
+                <button className="btn" onClick={() => setTab("verify")}>
+                  ✓ Get verified
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <ErrorBox message={err} />
 
-      <div className="profile-stats">
-        <div>
-          <strong>{profile.post_count ?? 0}</strong> <span>Posts</span>
-        </div>
-        <div className="profile-stat-clickable" onClick={() => setListModal("followers")}>
-          <strong>{profile.follower_count ?? 0}</strong> <span>Followers</span>
-        </div>
-        <div className="profile-stat-clickable" onClick={() => setListModal("following")}>
-          <strong>{profile.following_count ?? 0}</strong> <span>Following</span>
-        </div>
-        <div>
-          <strong>{profile.communities?.length ?? 0}</strong> <span>Communities</span>
-        </div>
-      </div>
-
       {listModal && <FollowListModal userId={profile.id} kind={listModal} onClose={() => setListModal(null)} />}
 
-      <div className="card" style={{ marginBottom: 26, marginTop: 18 }}>
+      <div className="card profile-about-card" style={{ marginBottom: 26, marginTop: 4 }}>
         {isOwnProfile && editing ? (
           <form onSubmit={saveProfile}>
             <label>Headline <span className="char-count">{editForm.headline.length}/{HEADLINE_MAX}</span></label>
@@ -507,36 +507,56 @@ export default function Profile() {
           </form>
         ) : (
           <>
-            <label>Headline</label>
-            <p>{profile.headline || "—"}</p>
-            <label>Bio</label>
-            <p>{profile.bio || "—"}</p>
+            <RoleBadge role={profile.role} isVerified={profile.is_verified} />
+            <div style={{ height: 14 }} />
+            <div className="profile-about-row">
+              <span className="profile-about-icon">💼</span>
+              <div>
+                <div className="profile-about-label">Headline</div>
+                <div>{profile.headline || "—"}</div>
+              </div>
+            </div>
+            <div className="profile-about-row">
+              <span className="profile-about-icon">📝</span>
+              <div>
+                <div className="profile-about-label">Bio</div>
+                <div>{profile.bio || "—"}</div>
+              </div>
+            </div>
             {isOwnProfile && (
-              <>
-                <label>Email</label>
-                <p>{profile.email}</p>
-              </>
+              <div className="profile-about-row">
+                <span className="profile-about-icon">📧</span>
+                <div>
+                  <div className="profile-about-label">Email</div>
+                  <div>{profile.email}</div>
+                </div>
+              </div>
             )}
-            <label>Reputation points</label>
-            <p>{profile.reputation_points || 0}</p>
+            <div className="profile-about-row">
+              <span className="profile-about-icon">⭐</span>
+              <div>
+                <div className="profile-about-label">Reputation points</div>
+                <div>{profile.reputation_points || 0}</div>
+              </div>
+            </div>
           </>
         )}
       </div>
 
-      <div className="composer-types" style={{ marginBottom: 16 }}>
-        <button className={"pill-btn" + (tab === "posts" ? " active" : "")} onClick={() => setTab("posts")}>
+      <div className="profile-icon-tabs">
+        <button className={"profile-icon-tab" + (tab === "posts" ? " active" : "")} onClick={() => setTab("posts")}>
           📝 Posts
         </button>
-        <button className={"pill-btn" + (tab === "communities" ? " active" : "")} onClick={() => setTab("communities")}>
+        <button className={"profile-icon-tab" + (tab === "communities" ? " active" : "")} onClick={() => setTab("communities")}>
           👥 Communities
         </button>
         {isOwnProfile && (
-          <button className={"pill-btn" + (tab === "saved" ? " active" : "")} onClick={() => setTab("saved")}>
+          <button className={"profile-icon-tab" + (tab === "saved" ? " active" : "")} onClick={() => setTab("saved")}>
             🔖 Saved
           </button>
         )}
         {isOwnProfile && (
-          <button className={"pill-btn" + (tab === "verify" ? " active" : "")} onClick={() => setTab("verify")}>
+          <button className={"profile-icon-tab" + (tab === "verify" ? " active" : "")} onClick={() => setTab("verify")}>
             ✓ Verification
           </button>
         )}

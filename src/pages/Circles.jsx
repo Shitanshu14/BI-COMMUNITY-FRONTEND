@@ -136,10 +136,10 @@ export default function Circles() {
         <>
           <div className="rail-title" style={{ fontSize: 16, marginBottom: 10 }}>📩 Pending invites</div>
           <div className="suggested-row">
-            {invites.map((inv) => (
+            {invites.filter((inv) => inv.circle).map((inv) => (
               <div className="suggested-card" key={inv.id}>
-                <Avatar name={inv.circle.name} src={inv.circle.icon} size={36} />
-                <div className="suggested-card-name">{inv.circle.name}</div>
+                <Avatar name={inv.circle?.name || "?"} src={inv.circle?.icon} size={36} />
+                <div className="suggested-card-name">{inv.circle?.name || "Unknown circle"}</div>
                 <div className="suggested-card-meta">
                   invited by {inv.invited_by?.username || "someone"} · {timeAgo(inv.created_at)}
                 </div>
@@ -175,16 +175,16 @@ export default function Circles() {
 
       <div className="community-grid">
         {(circles || []).map((c) => (
-          <div className="community-card" key={c.id} onClick={() => navigate("/circles/" + c.id)}>
+          <div className="community-card circle-card" key={c.id} onClick={() => navigate("/circles/" + c.id)}>
             <div className="community-card-head">
               <Avatar name={c.name} src={c.icon} size={40} />
-              <span className="badge badge-role">private</span>
+              <span className="badge badge-circle">🔒 circle</span>
               {c.is_owner && <span className="badge badge-verified">owner</span>}
             </div>
             <div className="entry-title">{c.name}</div>
             <div className="community-card-desc">{c.description || "No description yet."}</div>
             <div className="community-card-meta">
-              <span>{c.member_count || 0} / {c.max_members} members</span>
+              <span>{c.member_count || 0}{c.max_members ? ` / ${c.max_members}` : ""} members</span>
             </div>
           </div>
         ))}

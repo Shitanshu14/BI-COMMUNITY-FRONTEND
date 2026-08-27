@@ -3,6 +3,7 @@ import Topbar from "./components/Topbar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import MobileNav from "./components/MobileNav.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 import Landing from "./pages/Landing.jsx";
 import Login from "./pages/Login.jsx";
@@ -221,7 +222,9 @@ export default function App() {
       <div className="app-shell app-layout">
         <Sidebar />
         <div className="content-area page-transition" key={location.pathname}>
-          <Routing />
+          <ErrorBoundary resetKey={location.pathname}>
+            <Routing />
+          </ErrorBoundary>
         </div>
         <MobileNav />
       </div>
@@ -232,7 +235,9 @@ export default function App() {
     <div className="app-shell guest-shell">
       <Topbar />
       <div className="guest-main">
-        <Routing />
+        <ErrorBoundary resetKey={location.pathname}>
+          <Routing />
+        </ErrorBoundary>
       </div>
       <div className="page-foot">BiCommunity — a product by Bharat Intelligent · built on Django + React</div>
     </div>

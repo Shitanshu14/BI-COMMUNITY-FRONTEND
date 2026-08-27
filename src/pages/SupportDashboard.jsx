@@ -211,16 +211,16 @@ function UsersPanel({ onUserChanged }) {
                         <div>{detail.bio || "—"}</div>
                       </div>
                       <div>
-                        <div className="support-detail-label">Communities ({detail.communities.length})</div>
-                        {detail.communities.length === 0 && <div className="support-detail-empty">None</div>}
-                        {detail.communities.map((c) => (
+                        <div className="support-detail-label">Communities ({(detail.communities || []).length})</div>
+                        {(detail.communities || []).length === 0 && <div className="support-detail-empty">None</div>}
+                        {(detail.communities || []).map((c) => (
                           <div key={c.id} className="support-detail-chip">{c.name} <span className="support-detail-role">{c.role}</span></div>
                         ))}
                       </div>
                       <div>
-                        <div className="support-detail-label">Circles ({detail.circles.length})</div>
-                        {detail.circles.length === 0 && <div className="support-detail-empty">None</div>}
-                        {detail.circles.map((c) => (
+                        <div className="support-detail-label">Circles ({(detail.circles || []).length})</div>
+                        {(detail.circles || []).length === 0 && <div className="support-detail-empty">None</div>}
+                        {(detail.circles || []).map((c) => (
                           <div key={c.id} className="support-detail-chip">{c.name} <span className="support-detail-role">{c.role}</span></div>
                         ))}
                       </div>
