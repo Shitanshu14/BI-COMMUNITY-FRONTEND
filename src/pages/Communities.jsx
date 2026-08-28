@@ -4,6 +4,7 @@ import { api } from "../lib/api.js";
 import { ErrorBox, Avatar, Skeleton, Spinner } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import TrendingCarousel from "../components/TrendingCarousel.jsx";
+import CardImageGallery from "../components/CardImageGallery.jsx";
 
 export default function Communities() {
   const navigate = useNavigate();
@@ -190,6 +191,7 @@ export default function Communities() {
         <div className="community-grid">
           {items.map((c) => (
             <div className="community-card" key={c.id} onClick={() => navigate("/communities/" + c.id)}>
+              <CardImageGallery images={c.images} />
               <div className="community-card-head">
                 <Avatar name={c.name} size={40} />
                 {!c.is_public && <span className="badge badge-role">private</span>}

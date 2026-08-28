@@ -304,11 +304,30 @@ export default function Profile() {
   }, [isOwnProfile]);
 
   useEffect(() => {
-    if (profile) setEditForm({ headline: profile.headline || "", bio: profile.bio || "" });
+    if (profile) {
+      setEditForm({
+        headline: profile.headline || "",
+        bio: profile.bio || "",
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        date_of_birth: profile.date_of_birth || "",
+      });
+    }
   }, [profile]);
+
+  const NAME_MAX = 16;
+  const NAME_RE = /^[A-Za-z ]{1,16}$/;
 
   const saveProfile = async (e) => {
     e.preventDefault();
+    if (editForm.first_name && !NAME_RE.test(editForm.first_name)) {
+      setErr("First name: up to 16 letters only, no numbers or symbols.");
+      return;
+    }
+    if (editForm.last_name && !NAME_RE.test(editForm.last_name)) {
+      setErr("Last name: up to 16 letters only, no numbers or symbols.");
+      return;
+    }
     setSaveBusy(true);
     setErr("");
     try {
@@ -317,6 +336,9 @@ export default function Profile() {
         const fd = new FormData();
         fd.append("headline", editForm.headline);
         fd.append("bio", editForm.bio);
+        fd.append("first_name", editForm.first_name);
+        fd.append("last_name", editForm.last_name);
+        if (editForm.date_of_birth) fd.append("date_of_birth", editForm.date_of_birth);
         fd.append("avatar", avatarFile);
         body = fd;
       }
@@ -409,9 +431,10 @@ export default function Profile() {
           )}
         </div>
         <h1 className="profile-hero-name">
-          {profile.username}
+          {profile.full_name || profile.username}
           {profile.is_verified && <span className="verified-tick" style={{ fontSize: 18 }}>✓</span>}
         </h1>
+        <p className="profile-hero-username">@{profile.username}</p>
         <p className="profile-hero-headline">{profile.headline || "No headline yet."}</p>
 
         <div className="profile-hero-stats">
@@ -481,6 +504,37 @@ export default function Profile() {
       <div className="card profile-about-card" style={{ marginBottom: 26, marginTop: 4 }}>
         {isOwnProfile && editing ? (
           <form onSubmit={saveProfile}>
+            <div className="field-row">
+              <div>
+                <label>First name <span className="char-count">{editForm.first_name.length}/{NAME_MAX}</span></label>
+                <input
+                  type="text"
+                  value={editForm.first_name}
+                  maxLength={NAME_MAX}
+                  onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value.slice(0, NAME_MAX) })}
+                />
+              </div>
+              <div>
+                <label>Last name <span className="char-count">{editForm.last_name.length}/{NAME_MAX}</span></label>
+                <input
+                  type="text"
+                  value={editForm.last_name}
+                  maxLength={NAME_MAX}
+                  onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value.slice(0, NAME_MAX) })}
+                />
+              </div>
+            </div>
+            <label>Date of birth</label>
+            <input
+              type="date"
+              value={editForm.date_of_birth}
+              onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })}
+            />
+            {!profile.date_of_birth && (
+              <p className="subtle" style={{ marginTop: -8, marginBottom: 14 }}>
+                Required to join communities — you must be 18+.
+              </p>
+            )}
             <label>Headline <span className="char-count">{editForm.headline.length}/{HEADLINE_MAX}</span></label>
             <input
               type="text"

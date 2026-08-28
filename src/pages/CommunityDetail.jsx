@@ -7,6 +7,7 @@ import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel,
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
 import PostImageSlider from "../components/PostImageSlider.jsx";
+import CardImageGallery from "../components/CardImageGallery.jsx";
 
 const EMPTY_FORM = { post_type: "question", title: "", body: "", tags: [] };
 
@@ -254,7 +255,11 @@ export default function CommunityDetail() {
       <div style={{ height: 10 }} />
 
       {community && (
-        <div className="split" style={{ alignItems: "flex-start" }}>
+        <>
+          {community.images && community.images.length > 0 && (
+            <CardImageGallery images={community.images} height={220} className="circle-detail-gallery" />
+          )}
+          <div className="split" style={{ alignItems: "flex-start" }}>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
             <Avatar name={community.name} size={48} />
             <div>
@@ -282,6 +287,7 @@ export default function CommunityDetail() {
             </button>
           </div>
         </div>
+        </>
       )}
 
       <ErrorBox message={err} />

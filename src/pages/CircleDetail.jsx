@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { ErrorBox, Avatar } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import CardImageGallery from "../components/CardImageGallery.jsx";
 
 export default function CircleDetail() {
   const { id } = useParams();
@@ -27,6 +28,7 @@ export default function CircleDetail() {
   const [editIconFile, setEditIconFile] = useState(null);
   const [editIconPreview, setEditIconPreview] = useState(null);
   const [editBusy, setEditBusy] = useState(false);
+  const [newGalleryFiles, setNewGalleryFiles] = useState([]); // [{file, url}] — appended to circle.images on save
 
   const load = async () => {
     try {
@@ -90,6 +92,7 @@ export default function CircleDetail() {
     setEditDescription(circle.description || "");
     setEditIconFile(null);
     setEditIconPreview(null);
+    setNewGalleryFiles([]);
     setShowEdit(true);
   };
 
@@ -98,6 +101,32 @@ export default function CircleDetail() {
     if (!file) return;
     setEditIconFile(file);
     setEditIconPreview(URL.createObjectURL(file));
+  };
+
+  const onAddGalleryFiles = (e) => {
+    const picked = Array.from(e.target.files || []);
+    if (!picked.length) return;
+    setNewGalleryFiles((prev) => {
+      const currentTotal = (circle.images?.length || 0) + prev.length;
+      const room = Math.max(0, 6 - currentTotal);
+      const added = picked.slice(0, room).map((file) => ({ file, url: URL.createObjectURL(file) }));
+      return [...prev, ...added];
+    });
+    e.target.value = "";
+  };
+  const removeNewGalleryFile = (i) => {
+    setNewGalleryFiles((prev) => {
+      URL.revokeObjectURL(prev[i].url);
+      return prev.filter((_, idx) => idx !== i);
+    });
+  };
+  const removeExistingImage = async (imageId) => {
+    try {
+      await api(`/api/circles/${id}/images/${imageId}/delete/`, { method: "POST" });
+      setCircle((prev) => ({ ...prev, images: prev.images.filter((im) => im.id !== imageId) }));
+    } catch (ex) {
+      setErr(ex.message);
+    }
   };
 
   const saveEdit = async (e) => {
@@ -110,12 +139,15 @@ export default function CircleDetail() {
       fd.append("name", editName.trim());
       fd.append("description", editDescription);
       if (editIconFile) fd.append("icon", editIconFile);
+      newGalleryFiles.forEach(({ file }) => fd.append("images", file));
       const updated = await api("/api/circles/" + id + "/", { method: "PATCH", body: fd });
       setCircle((prev) => ({ ...prev, ...updated }));
       setShowEdit(false);
       if (editIconPreview) URL.revokeObjectURL(editIconPreview);
       setEditIconFile(null);
       setEditIconPreview(null);
+      newGalleryFiles.forEach((g) => URL.revokeObjectURL(g.url));
+      setNewGalleryFiles([]);
     } catch (ex) {
       setErr(ex.message);
     } finally {
@@ -148,6 +180,13 @@ export default function CircleDetail() {
 
   return (
     <div>
+      {circle.images && circle.images.length > 0 && (
+        <CardImageGallery
+          images={circle.images}
+          height={220}
+          className="circle-detail-gallery"
+        />
+      )}
       <div className="split" style={{ alignItems: "flex-start" }}>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
           <Avatar name={circle.name} src={circle.icon} size={48} />
@@ -206,6 +245,33 @@ export default function CircleDetail() {
             rows={3}
             placeholder="What's this circle for?"
           />
+          <div style={{ height: 12 }} />
+          <label>Gallery images (up to 6 total — shown as a slideshow on the circle's card)</label>
+          <div className="gallery-picker">
+            {(circle.images || []).map((im) => (
+              <div className="gallery-picker-thumb" key={im.id}>
+                <img src={im.image} alt="" />
+                <button type="button" className="gallery-picker-remove" onClick={() => removeExistingImage(im.id)}>
+                  ✕
+                </button>
+              </div>
+            ))}
+            {newGalleryFiles.map((g, i) => (
+              <div className="gallery-picker-thumb" key={g.url}>
+                <img src={g.url} alt="" />
+                <button type="button" className="gallery-picker-remove" onClick={() => removeNewGalleryFile(i)}>
+                  ✕
+                </button>
+              </div>
+            ))}
+            {(circle.images?.length || 0) + newGalleryFiles.length < 6 && (
+              <label className="gallery-picker-add">
+                <input type="file" accept="image/*" multiple onChange={onAddGalleryFiles} style={{ display: "none" }} />
+                <span className="image-dropzone-icon">📷</span>
+                <span>Add images</span>
+              </label>
+            )}
+          </div>
           <div style={{ height: 12 }} />
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn btn-primary" type="submit" disabled={editBusy}>

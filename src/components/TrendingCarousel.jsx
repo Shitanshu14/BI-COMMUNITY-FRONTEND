@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Skeleton } from "../lib/helpers.jsx";
 import { typeIcon, groupLabel } from "../lib/postTypes.js";
+import CardImageGallery from "./CardImageGallery.jsx";
 
 // Cross-community "what's hot right now" strip for the dashboard — same
 // engagement-ranked `sort=trending` the per-community feed tab already
@@ -69,6 +70,7 @@ export default function TrendingCarousel() {
         {posts !== null &&
           posts.map((p) => (
             <div className="trending-card" key={p.id} onClick={() => navigate("/posts/" + p.id)}>
+              <CardImageGallery images={p.images && p.images.length ? p.images : p.image ? [p.image] : []} height={120} />
               <div className="trending-card-community">{p.community_name}</div>
               <div className="trending-card-title">
                 {typeIcon(p)} {p.title}
