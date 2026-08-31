@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../lib/api.js";
 import { Avatar, ErrorBox, Spinner } from "../lib/helpers.jsx";
@@ -16,6 +16,7 @@ export default function Settings() {
 
   const [showDeactivate, setShowDeactivate] = useState(false);
   const [password, setPassword] = useState("");
+  const [deactivateUsername, setDeactivateUsername] = useState("");
   const [deactivateBusy, setDeactivateBusy] = useState(false);
   const [deactivateErr, setDeactivateErr] = useState("");
 
@@ -66,7 +67,7 @@ export default function Settings() {
     setDeactivateErr("");
     setDeactivateBusy(true);
     try {
-      await api("/api/users/deactivate/", { method: "POST", body: { password } });
+      await api("/api/users/deactivate/", { method: "POST", body: { username: deactivateUsername, password } });
       await logout();
       navigate("/login");
     } catch (ex) {
@@ -143,18 +144,42 @@ export default function Settings() {
         ) : (
           <form onSubmit={deactivate}>
             <ErrorBox message={deactivateErr} />
+            
+            <label>Confirm your username or email</label>
+            <input
+              type="text"
+              placeholder="Username or email"
+              value={deactivateUsername}
+              onChange={(e) => setDeactivateUsername(e.target.value)}
+              required
+              style={{ marginBottom: 12 }}
+            />
+
             <label>Confirm your password</label>
             <input
               type="password"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              style={{ marginBottom: 6 }}
             />
+            
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+              <Link to="/forgot-password" style={{ fontSize: 13, textDecoration: "underline", color: "var(--text-soft)" }}>
+                Forgot password?
+              </Link>
+            </div>
+
             <div style={{ display: "flex", gap: 10 }}>
               <button className="btn btn-sm" style={{ background: "var(--danger)", color: "#fff", borderColor: "var(--danger)" }} disabled={deactivateBusy}>
                 {deactivateBusy ? <Spinner /> : "Yes, deactivate my account"}
               </button>
-              <button type="button" className="btn btn-sm" onClick={() => setShowDeactivate(false)}>
+              <button type="button" className="btn btn-sm" onClick={() => {
+                setShowDeactivate(false);
+                setDeactivateUsername("");
+                setPassword("");
+              }}>
                 Cancel
               </button>
             </div>

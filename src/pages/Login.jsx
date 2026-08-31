@@ -42,8 +42,14 @@ export default function Login() {
       <div style={{ height: 20 }} />
       <form onSubmit={submit} className="card">
         <ErrorBox message={err} />
-        <label>Email</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <label>Email or Username</label>
+        <input
+          type="text"
+          placeholder="e.g. user@example.com or user123"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
         <label>Password</label>
         <input
           type="password"
