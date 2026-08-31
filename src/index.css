@@ -1845,6 +1845,7 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
 }
 .suggested-card {
   position: relative;
@@ -2191,6 +2192,7 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   scroll-snap-type: x mandatory;
   padding-bottom: 4px;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 .trending-track::-webkit-scrollbar { display: none; }
 .trending-card {
@@ -2259,12 +2261,73 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
 @media (max-width: 900px) {
   .sidebar { display: none; }
   .content-area { padding: 22px 18px 50px; }
+  
+  /* Horizontal scrollable stat strip on mobile/tablet */
+  .stat-strip {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    margin-left: -18px;
+    margin-right: -18px;
+    padding: 2px 18px 10px;
+    scrollbar-width: none; /* hide scrollbar on Firefox */
+    -webkit-overflow-scrolling: touch;
+  }
+  .stat-strip::-webkit-scrollbar {
+    display: none; /* hide scrollbar on Webkit/Blink */
+  }
+  .stat-card {
+    flex: 0 0 160px;
+    scroll-snap-align: start;
+    padding: 14px 16px;
+  }
 }
 @media (max-width: 640px) {
   .topbar { padding: 14px 18px; }
   .field-row { flex-direction: column; }
   .hero-wrap { padding: 60px 20px; }
   .hero-wrap h1 { font-size: 30px; }
+
+  /* Premium stacked split layout for community headers */
+  .split {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .split > div {
+    width: 100%;
+  }
+  
+  /* Stacked question layout so title and body have full width */
+  .post-body-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .qa-stats {
+    flex-direction: row;
+    width: 100%;
+    gap: 10px;
+  }
+  .qa-stat {
+    flex: 1;
+    flex-direction: row;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+
+  /* Wrapped post header badges/buttons to prevent overflow */
+  .post-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .post-head > div:last-child {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
 }
 
 /* -----------------------------------------------------------
