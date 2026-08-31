@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Spinner, ErrorBox, timeAgo, Avatar, VideoEmbed } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useShareSheet } from "../context/ShareSheetContext.jsx";
 import { typeIcon, subtypeLabel, groupLabel, typeColorKey } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
@@ -259,6 +260,7 @@ export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const openShare = useShareSheet();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState(null);
   const [commentBody, setCommentBody] = useState("");
@@ -597,6 +599,20 @@ export default function PostDetail() {
             </button>
             <button className={"btn btn-sm" + (post.is_saved ? " btn-primary" : "")} onClick={toggleSave} disabled={saving}>
               {post.is_saved ? "🔖 Saved" : "🔖 Save"}
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={() =>
+                openShare({
+                  type: "post",
+                  id: post.id,
+                  title: post.title,
+                  subtitle: post.community?.name,
+                  image: post.image || post.images?.[0]?.image,
+                })
+              }
+            >
+              ↗️ Share
             </button>
           </div>
         </div>

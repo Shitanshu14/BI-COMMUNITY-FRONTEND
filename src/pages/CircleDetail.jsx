@@ -3,12 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { ErrorBox, Avatar } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useShareSheet } from "../context/ShareSheetContext.jsx";
 import CardImageGallery from "../components/CardImageGallery.jsx";
 
 export default function CircleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: me } = useAuth();
+  const openShare = useShareSheet();
   const [circle, setCircle] = useState(null);
   const [members, setMembers] = useState(null);
   const [err, setErr] = useState("");
@@ -205,6 +207,21 @@ export default function CircleDetail() {
           </button>
           <button className="btn" onClick={() => navigate("/circles/" + id + "/chat")}>
             💬 Live chat
+          </button>
+          <button
+            className="btn"
+            title="Share this circle"
+            onClick={() =>
+              openShare({
+                type: "circle",
+                id: circle.id,
+                title: circle.name,
+                subtitle: (circle.member_count || 0) + " members",
+                image: circle.icon,
+              })
+            }
+          >
+            ↗️ Share
           </button>
           {circle.is_owner && (
             <button className="btn" onClick={() => (showEdit ? setShowEdit(false) : openEdit())}>

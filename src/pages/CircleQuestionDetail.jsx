@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useShareSheet } from "../context/ShareSheetContext.jsx";
 import { Avatar, ErrorBox, Spinner, timeAgo } from "../lib/helpers.jsx";
 
 export default function CircleQuestionDetail() {
   const { id, qid } = useParams();
   const { user: me } = useAuth();
+  const openShare = useShareSheet();
   const [circle, setCircle] = useState(null);
   const [question, setQuestion] = useState(null);
   const [err, setErr] = useState("");
@@ -98,6 +100,14 @@ export default function CircleQuestionDetail() {
           <span>{question.author?.username}</span>
           <span>·</span>
           <span>{timeAgo(question.created_at)}</span>
+          <button
+            type="button"
+            className="qa-share-btn"
+            title="Share this question"
+            onClick={() => openShare({ type: "question", id: question.id, title: question.title, subtitle: circle?.name })}
+          >
+            ↗️ Share
+          </button>
         </div>
       </div>
 

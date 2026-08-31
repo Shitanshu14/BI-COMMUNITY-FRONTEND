@@ -5,6 +5,7 @@ import MobileNav from "./components/MobileNav.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
+import { ShareSheetProvider } from "./context/ShareSheetContext.jsx";
 import Landing from "./pages/Landing.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
@@ -219,15 +220,17 @@ export default function App() {
 
   if (user) {
     return (
-      <div className="app-shell app-layout">
-        <Sidebar />
-        <div className="content-area page-transition" key={location.pathname}>
-          <ErrorBoundary resetKey={location.pathname}>
-            <Routing />
-          </ErrorBoundary>
+      <ShareSheetProvider>
+        <div className="app-shell app-layout">
+          <Sidebar />
+          <div className="content-area page-transition" key={location.pathname}>
+            <ErrorBoundary resetKey={location.pathname}>
+              <Routing />
+            </ErrorBoundary>
+          </div>
+          <MobileNav />
         </div>
-        <MobileNav />
-      </div>
+      </ShareSheetProvider>
     );
   }
 

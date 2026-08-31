@@ -12,6 +12,70 @@ function senderId(m) {
   return m.sender_id || (m.sender && m.sender.id);
 }
 
+// Picks whichever shared_* field a message carries (a message only ever
+// has zero or one — see chat/models.py Message docstring) and normalizes
+// it to a common shape SharedMessageCard can render regardless of kind.
+export function sharedContentOf(m) {
+  if (m.shared_post) return { kind: m.shared_post.post_type === "question" ? "question" : "post", data: m.shared_post };
+  if (m.shared_question) return { kind: "circle-question", data: m.shared_question };
+  if (m.shared_community) return { kind: "community", data: m.shared_community };
+  if (m.shared_circle) return { kind: "circle", data: m.shared_circle };
+  return null;
+}
+
+const SHARED_KIND_META = {
+  post: { icon: "📝", label: "Post" },
+  question: { icon: "❓", label: "Question" },
+  "circle-question": { icon: "❓", label: "Circle question" },
+  community: { icon: "🏘️", label: "Community" },
+  circle: { icon: "⭕", label: "Circle" },
+};
+
+// WhatsApp-style "forwarded content" card — renders inline inside a chat
+// bubble instead of the message just being a raw link, and is itself
+// clickable through to the real thing (post detail, Q&A thread, or the
+// community/circle page to join). Shared between MessageThread.jsx (DMs)
+// and Chat.jsx (community/circle live chat) since a shared message looks
+// the same regardless of which room it lands in.
+export function SharedMessageCard({ shared, mine }) {
+  const { kind, data } = shared;
+  const meta = SHARED_KIND_META[kind];
+  const image = data.image || data.icon || null;
+
+  let href = "#";
+  let title = data.title || data.name;
+  let subtitle = "";
+  if (kind === "post" || kind === "question") {
+    href = "/posts/" + data.id;
+    subtitle = data.community_name ? "in " + data.community_name : "";
+  } else if (kind === "circle-question") {
+    href = "/circles/" + data.circle + "/qa/" + data.id;
+    subtitle = data.circle_name ? "in " + data.circle_name : "";
+  } else if (kind === "community") {
+    href = "/communities/" + data.id;
+    subtitle = (data.member_count || 0) + " members";
+  } else if (kind === "circle") {
+    href = "/circles/" + data.id;
+    subtitle = (data.member_count || 0) + " members";
+  }
+
+  return (
+    <Link to={href} className={"shared-card" + (mine ? " mine" : "")}>
+      <div className="shared-card-media">
+        {image ? <img src={image} alt="" /> : <span className="shared-card-icon">{meta.icon}</span>}
+      </div>
+      <div className="shared-card-body">
+        <div className="shared-card-kind">{meta.icon} {meta.label}</div>
+        <div className="shared-card-title">{title}</div>
+        {subtitle && <div className="shared-card-subtitle">{subtitle}</div>}
+        {(kind === "community" || kind === "circle") && (
+          <div className="shared-card-cta">View &amp; join →</div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
 export default function MessageThread() {
   const { userId } = useParams();
   const { user } = useAuth();
@@ -137,7 +201,14 @@ export default function MessageThread() {
             <div className={"bubble-row " + (mine ? "mine" : "theirs")} key={m.id || i}>
               {!mine && <Avatar name={otherUser?.username || "member"} src={otherUser?.avatar} size={26} />}
               <div className="bubble-col" style={{ marginLeft: mine ? 0 : 8 }}>
-                <div className="bubble">{m.message || m.body || m.text}</div>
+                {sharedContentOf(m) ? (
+                  <div className={"bubble bubble-shared" + (mine ? " mine-media" : "")}>
+                    <SharedMessageCard shared={sharedContentOf(m)} mine={mine} />
+                    {m.body && <div className="bubble-caption">{m.body}</div>}
+                  </div>
+                ) : (
+                  <div className="bubble">{m.message || m.body || m.text}</div>
+                )}
                 <div className="bubble-meta">
                   {m.created_at && <span>{timeAgo(m.created_at)}</span>}
                   {mine && (

@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { api, WS_BASE } from "../lib/api.js";
 import { timeAgo, Avatar } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { sharedContentOf, SharedMessageCard } from "./MessageThread.jsx";
 
 function senderName(m) {
   return (m.sender && (m.sender.username || m.sender)) || m.sender_username || "someone";
@@ -127,7 +128,14 @@ export default function Chat({ kind = "community" }) {
               <div className={"bubble-row " + (mine ? "mine" : "theirs")}>
                 {!mine && <Avatar name={name} size={26} />}
                 <div className="bubble-col" style={{ marginLeft: mine ? 0 : 8 }}>
-                  <div className="bubble">{m.message || m.body || m.text}</div>
+                  {sharedContentOf(m) ? (
+                    <div className={"bubble bubble-shared" + (mine ? " mine-media" : "")}>
+                      <SharedMessageCard shared={sharedContentOf(m)} mine={mine} />
+                      {m.body && <div className="bubble-caption">{m.body}</div>}
+                    </div>
+                  ) : (
+                    <div className="bubble">{m.message || m.body || m.text}</div>
+                  )}
                   {m.created_at && (
                     <div className="bubble-meta">
                       <span>{timeAgo(m.created_at)}</span>

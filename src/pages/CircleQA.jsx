@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Avatar, ErrorBox, Spinner, timeAgo } from "../lib/helpers.jsx";
+import { useShareSheet } from "../context/ShareSheetContext.jsx";
 
 /** Circle Q&A board — list of questions asked inside a circle. Lives
  * alongside the circle's live chat: chat is for quick back-and-forth,
@@ -10,6 +11,7 @@ import { Avatar, ErrorBox, Spinner, timeAgo } from "../lib/helpers.jsx";
 export default function CircleQA() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const openShare = useShareSheet();
   const [circle, setCircle] = useState(null);
   const [questions, setQuestions] = useState(null);
   const [err, setErr] = useState("");
@@ -128,6 +130,17 @@ export default function CircleQA() {
                   <span>{q.author?.username}</span>
                   <span>·</span>
                   <span>{timeAgo(q.created_at)}</span>
+                  <button
+                    type="button"
+                    className="qa-share-btn"
+                    title="Share this question"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openShare({ type: "question", id: q.id, title: q.title, subtitle: circle?.name });
+                    }}
+                  >
+                    ↗️ Share
+                  </button>
                 </div>
               </div>
             </div>

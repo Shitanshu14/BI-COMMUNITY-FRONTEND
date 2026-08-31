@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Spinner, ErrorBox, timeAgo, Avatar, VideoEmbed } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useShareSheet } from "../context/ShareSheetContext.jsx";
 import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel, groupLabel, typeColorKey, encodeLink } from "../lib/postTypes.js";
 import { extractVideoEmbed } from "../lib/embed.js";
 import PostExtras from "../components/PostExtras.jsx";
@@ -15,6 +16,7 @@ export default function CommunityDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const openShare = useShareSheet();
   const [community, setCommunity] = useState(null);
   const [posts, setPosts] = useState(null);
   const [postsNext, setPostsNext] = useState(null);
@@ -284,6 +286,21 @@ export default function CommunityDetail() {
             )}
             <button className="btn" onClick={() => navigate("/chat/" + id)}>
               Open chat
+            </button>
+            <button
+              className="btn"
+              title="Share this community"
+              onClick={() =>
+                openShare({
+                  type: "community",
+                  id: community.id,
+                  title: community.name,
+                  subtitle: (community.member_count || 0) + " members",
+                  image: community.icon,
+                })
+              }
+            >
+              ↗️ Share
             </button>
           </div>
         </div>
@@ -679,6 +696,21 @@ export default function CommunityDetail() {
                     disabled={saveBusy === p.id}
                   >
                     {p.is_saved ? "🔖 Saved" : "🔖 Save"}
+                  </button>
+                  <button
+                    className="post-footer-action"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openShare({
+                        type: "post",
+                        id: p.id,
+                        title: p.title,
+                        subtitle: community?.name,
+                        image: p.image || p.images?.[0]?.image,
+                      });
+                    }}
+                  >
+                    ↗️ Share
                   </button>
                   <span className="post-footer-spacer" />
                   <span className="post-footer-link" onClick={() => navigate("/posts/" + p.id)}>
