@@ -422,15 +422,17 @@ h3 { font-size: 16px; }
    Cards, community list, feed
    ----------------------------------------------------------- */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-sm);
 }
 /* Only cards that opt in with data-ptype (the post-detail header) get the
    colored left accent — plain .card usage elsewhere is untouched. */
-.card[data-ptype] { border-left: 3px solid var(--ptype-color, var(--border)); }
+.card[data-ptype] { border-left: 4px solid var(--ptype-color, var(--border)); }
 
 .split {
   display: flex;
@@ -449,8 +451,10 @@ h3 { font-size: 16px; }
 .community-card {
   position: relative;
   overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   border-radius: var(--radius-lg);
   padding: 22px 20px 20px;
   cursor: pointer;
@@ -473,9 +477,9 @@ h3 { font-size: 16px; }
 .community-grid .community-card:nth-child(5n+4) { --card-grad: var(--grad-4); }
 .community-grid .community-card:nth-child(5n+5) { --card-grad: var(--grad-5); }
 .community-card:hover {
-  box-shadow: var(--shadow-md), 0 14px 32px -14px color-mix(in srgb, var(--primary) 55%, transparent);
-  border-color: var(--primary-soft-ink);
-  transform: translateY(-3px);
+  box-shadow: var(--shadow-md), 0 12px 28px -12px color-mix(in srgb, var(--primary) 35%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  transform: translateY(-4px) scale(1.02);
 }
 /* Community avatar sits on a soft gradient chip instead of a flat circle,
    picking up the same rotating accent as the card's top bar. */
@@ -887,16 +891,23 @@ h3 { font-size: 16px; }
 .post-card {
   --ptype-color: var(--type-post);
   --ptype-soft: var(--type-post-soft);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--ptype-color);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  border-left: 4px solid var(--ptype-color);
   border-radius: var(--radius-lg);
   padding: 17px 19px;
   margin-bottom: 14px;
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
-.post-card:hover { box-shadow: var(--shadow-md), var(--glow-primary-soft); border-color: var(--primary-soft-ink); border-left-color: var(--ptype-color); transform: translateY(-2px); }
+.post-card:hover {
+  box-shadow: var(--shadow-md), 0 10px 22px -10px color-mix(in srgb, var(--ptype-color) 30%, transparent);
+  border-color: color-mix(in srgb, var(--ptype-color) 40%, transparent);
+  border-left-color: var(--ptype-color);
+  transform: translateY(-3px);
+}
 /* Per-type identity — set via data-ptype on the .post-card / .card /
    .badge-type element (see typeColorKey() in postTypes.js). Question,
    Poll and each Post subtype get their own fixed color instead of every
@@ -2137,8 +2148,10 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
 .stat-card {
   position: relative;
   overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
   cursor: pointer;
@@ -2164,7 +2177,11 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   height: 4px;
   background: var(--card-grad);
 }
-.stat-card:hover { box-shadow: var(--shadow-md), 0 14px 30px -14px color-mix(in srgb, var(--primary) 55%, transparent); border-color: var(--primary-soft-ink); transform: translateY(-3px); }
+.stat-card:hover {
+  box-shadow: var(--shadow-md), 0 12px 28px -10px color-mix(in srgb, var(--primary) 35%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  transform: translateY(-4px) scale(1.02);
+}
 .stat-card-icon {
   font-size: 20px;
   margin-bottom: 10px;
