@@ -216,7 +216,6 @@ function AnswerRow({ comment, postId, canAccept, onAccepted, onError }) {
 
   return (
     <div className="entry comment-entry" id={"comment-" + comment.id}>
-      {comment.is_accepted && <div className="qa-accepted-badge" style={{ marginBottom: 8 }}>✓ Accepted answer</div>}
       <div className="entry-head-row">
         <Avatar name={comment.author?.username || "member"} src={comment.author?.avatar} size={30} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -551,6 +550,7 @@ export default function PostDetail() {
             </form>
           ) : (
             <>
+              {post.post_type === "question" && <div className="qa-eyebrow">❓ Question</div>}
               <h1 style={{ marginTop: 10 }}>{post.title}</h1>
               <p style={{ color: "var(--ink-soft)" }}>{post.body}</p>
               <PostExtras post={post} />
@@ -637,7 +637,9 @@ export default function PostDetail() {
       )}
       {comments && post?.post_type === "question" &&
         comments.map((c) => (
-          <div className={"card comment-card" + (c.is_accepted ? " qa-answer-accepted" : "")} key={c.id}>
+          <div className={"card comment-card answer-card" + (c.is_accepted ? " qa-answer-accepted" : "")} key={c.id}>
+            {c.is_accepted && <span className="qa-accepted-ribbon">✓ Accepted</span>}
+            <div className="qa-answer-eyebrow">💬 Answer</div>
             <AnswerRow
               comment={c}
               postId={id}

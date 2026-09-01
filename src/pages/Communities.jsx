@@ -93,7 +93,11 @@ export default function Communities() {
       const res = await api("/api/communities/" + c.id + "/join/", { method: "POST" });
       setList((prev) => {
         const arr = Array.isArray(prev) ? prev : prev.results || [];
-        return arr.map((x) => (x.id === c.id ? { ...x, is_member: true, member_count: res.member_count } : x));
+        return arr.map((x) =>
+          x.id === c.id
+            ? { ...x, is_member: res.status === "joined", is_pending: res.status === "pending", member_count: res.member_count }
+            : x
+        );
       });
     } catch (ex) {
       setErr(ex.message);
@@ -157,8 +161,8 @@ export default function Communities() {
                 <Avatar name={c.name} size={36} />
                 <div className="suggested-card-name">{c.name}</div>
                 <div className="suggested-card-meta">{c.member_count || 0} members</div>
-                <button className="btn btn-primary btn-sm" onClick={(e) => quickJoin(e, c)} disabled={joinBusy === c.id}>
-                  {joinBusy === c.id ? "…" : "Join"}
+                <button className="btn btn-primary btn-sm" onClick={(e) => quickJoin(e, c)} disabled={joinBusy === c.id || c.is_pending}>
+                  {joinBusy === c.id ? "…" : c.is_pending ? "Requested" : "Join"}
                 </button>
               </div>
             ))}
@@ -196,6 +200,7 @@ export default function Communities() {
                 <Avatar name={c.name} size={40} />
                 {!c.is_public && <span className="badge badge-role">private</span>}
                 {c.is_member && <span className="badge badge-verified">joined</span>}
+                {!c.is_member && c.is_pending && <span className="badge badge-role">requested</span>}
               </div>
               <div className="entry-title">{c.name}</div>
               <div className="community-card-desc">{c.description || "No description yet."}</div>

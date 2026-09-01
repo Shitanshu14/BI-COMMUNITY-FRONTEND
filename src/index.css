@@ -959,6 +959,94 @@ h3 { font-size: 16px; }
 .qa-stat-answers { background: color-mix(in srgb, var(--verified) 14%, transparent); border-color: color-mix(in srgb, var(--verified) 30%, transparent); }
 .qa-stat-answers .qa-stat-num { color: var(--verified); }
 
+/* --- Question: a whole different silhouette from a Post, not just a
+   colored edge — a soft tinted backdrop, a big decorative "?" watermark,
+   and an eyebrow label so it reads as "someone is asking something" at a
+   glance, in the feed and on its own detail page alike. --- */
+.post-card[data-ptype="question"] {
+  background:
+    radial-gradient(160px 160px at 100% 0%, color-mix(in srgb, var(--type-question) 10%, transparent), transparent 70%),
+    color-mix(in srgb, var(--surface) 92%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+.card[data-ptype="question"] {
+  background:
+    radial-gradient(220px 220px at 100% 0%, color-mix(in srgb, var(--type-question) 12%, transparent), transparent 70%),
+    color-mix(in srgb, var(--surface) 92%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+.post-card[data-ptype="question"]::after,
+.card[data-ptype="question"]::after {
+  content: "?";
+  position: absolute;
+  right: -6px;
+  top: -34px;
+  font-family: var(--font-display);
+  font-size: 148px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--type-question);
+  opacity: 0.06;
+  pointer-events: none;
+}
+.qa-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--type-question);
+  margin-bottom: 4px;
+}
+.post-card[data-ptype="question"] .post-title,
+.card[data-ptype="question"] h1 {
+  position: relative;
+}
+
+/* --- Answers: their own card identity, distinct from a generic comment
+   — a left rail in the question's color, a small "Answer" eyebrow +
+   index, and a gold ribbon treatment when accepted so the resolution
+   stands out immediately while scanning the thread. --- */
+.answer-card {
+  position: relative;
+  border-left: 4px solid var(--type-question);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+}
+.answer-card .qa-answer-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+.qa-answer-accepted.answer-card {
+  border-left-color: var(--verified);
+  background: color-mix(in srgb, var(--verified-soft) 45%, var(--surface));
+  box-shadow: var(--shadow-sm), 0 0 0 1px color-mix(in srgb, var(--verified) 30%, transparent);
+}
+.qa-answer-accepted .qa-answer-eyebrow { color: var(--verified); }
+.qa-accepted-ribbon {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  background: var(--verified);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--verified) 60%, transparent);
+}
+
 /* --- Poll: its own tinted panel instead of bare options --- */
 .poll-panel {
   margin-top: 10px;
@@ -2345,6 +2433,61 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
     flex-wrap: wrap !important;
     gap: 6px !important;
   }
+}
+
+/* -----------------------------------------------------------
+   Narrow phones (≤420px) — tighter version of the 640px rules
+   above. Communities/Circles pages pack a lot into the header
+   (title + "+ New …" button) and card grid; without this, content
+   overflows the viewport horizontally on small devices instead of
+   wrapping/shrinking to fit.
+   ----------------------------------------------------------- */
+@media (max-width: 420px) {
+  .content-area { padding: 16px 14px 46px; }
+
+  /* Header row (title + primary action button) always wraps instead of
+     overflowing — hit on Communities/Circles's "+ New …" button and any
+     community/circle detail header action row. */
+  .split {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .split > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .split > div:last-child .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  h1 { font-size: 22px; }
+
+  /* Community/circle card grid collapses to a single, full-width column
+     instead of trying to fit a 280px-minimum card into less room. */
+  .community-grid { grid-template-columns: 1fr; gap: 12px; }
+  .community-card { padding: 16px 14px 14px; }
+
+  /* Stat strip cards shrink so all four are legibly swipeable instead of
+     each one eating most of the screen width. */
+  .stat-card { flex-basis: 132px; padding: 12px 12px; }
+  .stat-card-value { font-size: 22px; }
+
+  /* Trending carousel cards shrink to leave a visible peek of the next
+     card (signals "swipe for more") without overflowing the frame. */
+  .trending-card { flex-basis: 200px; padding: 14px 12px 12px; }
+
+  .suggested-row { gap: 10px; }
+  .suggested-card { min-width: 128px; padding: 12px; }
+
+  /* Create-community / create-circle forms and any other fixed-maxWidth
+     card should never exceed the viewport. */
+  .card { max-width: 100% !important; }
+
+  .gallery-picker { gap: 8px; }
+  .gallery-picker-thumb, .gallery-picker-add { width: 72px; height: 72px; }
 }
 
 /* -----------------------------------------------------------

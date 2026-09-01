@@ -50,13 +50,49 @@ export default function CommunityDetail() {
     setJoinBusy(true);
     setErr("");
     try {
-      const action = community.is_member ? "leave" : "join";
+      const action = community.is_member || community.is_pending ? "leave" : "join";
       const res = await api("/api/communities/" + id + "/" + action + "/", { method: "POST" });
-      setCommunity((prev) => ({ ...prev, is_member: action === "join", member_count: res.member_count }));
+      setCommunity((prev) => ({
+        ...prev,
+        is_member: res.status === "joined",
+        is_pending: res.status === "pending",
+        member_count: res.member_count,
+      }));
     } catch (ex) {
       setErr(ex.message);
     } finally {
       setJoinBusy(false);
+    }
+  };
+
+  const [joinRequests, setJoinRequests] = useState(null);
+  const [approveBusy, setApproveBusy] = useState(null);
+
+  const loadJoinRequests = async () => {
+    try {
+      const res = await api("/api/communities/" + id + "/join_requests/");
+      setJoinRequests(res);
+    } catch (ex) {
+      setJoinRequests([]);
+    }
+  };
+
+  const respondJoinRequest = async (userId, approve) => {
+    setApproveBusy(userId);
+    setErr("");
+    try {
+      const res = await api(
+        "/api/communities/" + id + "/join_requests/" + userId + "/" + (approve ? "approve" : "reject") + "/",
+        { method: "POST" }
+      );
+      setJoinRequests((prev) => (prev || []).filter((r) => r.id !== userId));
+      if (approve && res.member_count != null) {
+        setCommunity((prev) => (prev ? { ...prev, member_count: res.member_count } : prev));
+      }
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setApproveBusy(null);
     }
   };
 
@@ -108,6 +144,17 @@ export default function CommunityDetail() {
       })
       .catch(() => setCanModerate(false));
   }, [id, user]);
+
+  // Admins of a registration-based ("requires approval") community get a
+  // small "Join requests" panel to approve/decline people waiting to get
+  // in — pulled only once we know they can moderate, so a regular member
+  // never even fires this request.
+  useEffect(() => {
+    if (canModerate && community?.join_mode === "approval") {
+      loadJoinRequests();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canModerate, community?.join_mode, id]);
 
   const togglePin = async (postId) => {
     setPinBusy(postId);
@@ -224,6 +271,10 @@ export default function CommunityDetail() {
   };
 
   const toggleLike = async (postId) => {
+    if (!community?.is_member) {
+      setErr("Join this community to like, comment, or share here.");
+      return;
+    }
     setLikeBusy(postId);
     try {
       const res = await api("/api/posts/" + postId + "/like/", { method: "POST" });
@@ -238,6 +289,10 @@ export default function CommunityDetail() {
   };
 
   const toggleSave = async (postId) => {
+    if (!community?.is_member) {
+      setErr("Join this community to save posts.");
+      return;
+    }
     setSaveBusy(postId);
     try {
       const res = await api("/api/posts/" + postId + "/save/", { method: "POST" });
@@ -279,9 +334,16 @@ export default function CommunityDetail() {
                   {joinBusy ? <Spinner /> : "Leave"}
                 </button>
               </>
+            ) : community.is_pending ? (
+              <>
+                <span className="badge badge-role">⏳ Requested</span>
+                <button className="btn btn-sm" onClick={toggleJoin} disabled={joinBusy}>
+                  {joinBusy ? <Spinner /> : "Cancel request"}
+                </button>
+              </>
             ) : (
               <button className="btn btn-primary" onClick={toggleJoin} disabled={joinBusy}>
-                {joinBusy ? <Spinner /> : "Join community"}
+                {joinBusy ? <Spinner /> : community.join_mode === "approval" ? "Request to join" : "Join community"}
               </button>
             )}
             <button className="btn" onClick={() => navigate("/chat/" + id)}>
@@ -321,11 +383,15 @@ export default function CommunityDetail() {
           {community && !community.is_member ? (
             <div className="card composer" style={{ textAlign: "center" }}>
               <p className="subtle" style={{ margin: "6px 0 12px" }}>
-                Join this community to post, comment, and chat.
+                {community.is_pending
+                  ? "Your request to join is waiting on a community admin to approve it."
+                  : "Join this community to post, comment, and chat."}
               </p>
-              <button className="btn btn-primary" onClick={toggleJoin} disabled={joinBusy}>
-                {joinBusy ? <Spinner /> : "Join community"}
-              </button>
+              {!community.is_pending && (
+                <button className="btn btn-primary" onClick={toggleJoin} disabled={joinBusy}>
+                  {joinBusy ? <Spinner /> : community.join_mode === "approval" ? "Request to join" : "Join community"}
+                </button>
+              )}
             </div>
           ) : community?.is_on_hold ? (
             <div className="card composer" style={{ textAlign: "center" }}>
@@ -620,6 +686,7 @@ export default function CommunityDetail() {
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
+                    {groupOf(p) === "question" && <div className="qa-eyebrow">❓ Question</div>}
                     <div className="post-title" onClick={() => navigate("/posts/" + p.id)}>
                       {p.title}
                     </div>
@@ -765,7 +832,50 @@ export default function CommunityDetail() {
                 <span>Visibility</span>
                 <span className="rail-stat-num">{community.is_public ? "Open" : "Private"}</span>
               </div>
+              <div className="rail-stat-row">
+                <span>Joining</span>
+                <span className="rail-stat-num">{community.join_mode === "approval" ? "Registration" : "Instant"}</span>
+              </div>
             </div>
+
+            {canModerate && community.join_mode === "approval" && (
+              <div className="card">
+                <div className="rail-title">📝 Join requests</div>
+                {joinRequests === null && <p className="subtle" style={{ margin: 0 }}>Loading…</p>}
+                {joinRequests !== null && joinRequests.length === 0 && (
+                  <p className="subtle" style={{ margin: 0 }}>No pending requests right now.</p>
+                )}
+                {(joinRequests || []).map((r) => (
+                  <div
+                    key={r.id}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "8px 0" }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                      <Avatar name={r.username} size={28} />
+                      <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {r.username}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        disabled={approveBusy === r.id}
+                        onClick={() => respondJoinRequest(r.id, true)}
+                      >
+                        {approveBusy === r.id ? <Spinner /> : "Approve"}
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        disabled={approveBusy === r.id}
+                        onClick={() => respondJoinRequest(r.id, false)}
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {posts && posts.some((p) => p.is_pinned) && (
               <div className="card">
