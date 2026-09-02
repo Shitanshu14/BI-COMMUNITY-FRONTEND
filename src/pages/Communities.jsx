@@ -1,104 +1,84 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
-import { ErrorBox, Avatar, Skeleton, Spinner } from "../lib/helpers.jsx";
+import { ErrorBox, Skeleton, Spinner } from "../lib/helpers.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import TrendingCarousel from "../components/TrendingCarousel.jsx";
-import CardImageGallery from "../components/CardImageGallery.jsx";
+import { CATEGORIES, categoryMeta } from "../lib/communityCategories.js";
+import CommunityCover from "../components/CommunityCover.jsx";
+import CreateCommunityModal from "../components/CreateCommunityModal.jsx";
+
+const VISIBLE_PILLS = CATEGORIES.slice(0, 5); // Technology, Education, Social, Gaming, Business
+const MORE_PILLS = CATEGORIES.slice(5); // Entertainment, Other
+
+function fmtCount(n) {
+  n = n || 0;
+  if (n >= 1000) return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + "K";
+  return String(n);
+}
 
 export default function Communities() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [list, setList] = useState(null);
-  const [next, setNext] = useState(null);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
   const [query, setQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [moreOpen, setMoreOpen] = useState(false);
   const [joinBusy, setJoinBusy] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const moreRef = useRef(null);
 
   const load = async (search = "") => {
     try {
       const path = "/api/communities/" + (search ? "?search=" + encodeURIComponent(search) : "");
       const res = await api(path);
-      setList(res);
-      setNext(Array.isArray(res) ? null : res.next || null);
+      setList(Array.isArray(res) ? res : res.results || res);
     } catch (ex) {
       setErr(ex.message);
     }
   };
 
-  const loadMore = async () => {
-    if (!next || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const res = await api(next.replace(/^https?:\/\/[^/]+/, ""));
-      setList((prev) => {
-        const prevItems = Array.isArray(prev) ? prev : prev.results || [];
-        return { ...res, results: [...prevItems, ...(res.results || [])] };
-      });
-      setNext(res.next || null);
-    } catch (ex) {
-      setErr(ex.message);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
-
-  // Runs once on mount (query starts empty) and again 300ms after the user
-  // stops typing — a single effect avoids firing the initial load twice.
   useEffect(() => {
     const t = setTimeout(() => load(query), query ? 300 : 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  // Dashboard strip: four counts pulled live from real endpoints, not
-  // hand-typed copy — circles/notifications are already scoped
-  // server-side to "mine", unread comes from the same endpoint the
-  // sidebar badge polls, and joined-communities is derived from the
-  // community list itself below (see `items`) so it needs no separate call.
   useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      api("/api/circles/").catch(() => null),
-      api("/api/chat/dm/unread-count/").catch(() => null),
-      api("/api/notifications/unread-count/").catch(() => null),
-    ]).then(([circlesRes, unreadRes, notifRes]) => {
-      if (cancelled) return;
-      const circleCount = Array.isArray(circlesRes) ? circlesRes.length : circlesRes?.count ?? circlesRes?.results?.length ?? 0;
-      setStats({ circles: circleCount, unread: unreadRes?.count || 0, notifications: notifRes?.unread_count || 0 });
-    });
-    return () => {
-      cancelled = true;
+    const onDocClick = (e) => {
+      if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false);
     };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  const items = Array.isArray(list) ? list : (list && list.results) || [];
-  const myCommunityCount = items.filter((c) => c.is_member).length;
+  const items = list || [];
+  const filtered = activeCategory === "all" ? items : items.filter((c) => c.category === activeCategory);
 
-  // Simple "trending among what you haven't joined" ranking — no ML, just
-  // member_count desc among communities the user isn't already in. Good
-  // enough for a discovery rail; only shown on the unfiltered browse view
-  // so it doesn't fight with active search results.
-  const suggested = [...items]
+  const myCommunities = filtered.filter((c) => c.is_member);
+  const discover = [...filtered]
     .filter((c) => !c.is_member)
     .sort((a, b) => (b.member_count || 0) - (a.member_count || 0))
-    .slice(0, 5);
+    .slice(0, 6);
+  const trending = [...filtered].sort((a, b) => (b.member_count || 0) - (a.member_count || 0)).slice(0, 5);
+
+  const categoryCounts = CATEGORIES.reduce((acc, c) => {
+    acc[c.value] = items.filter((x) => x.category === c.value).length;
+    return acc;
+  }, {});
 
   const quickJoin = async (e, c) => {
     e.stopPropagation();
     setJoinBusy(c.id);
     try {
       const res = await api("/api/communities/" + c.id + "/join/", { method: "POST" });
-      setList((prev) => {
-        const arr = Array.isArray(prev) ? prev : prev.results || [];
-        return arr.map((x) =>
+      setList((prev) =>
+        (prev || []).map((x) =>
           x.id === c.id
             ? { ...x, is_member: res.status === "joined", is_pending: res.status === "pending", member_count: res.member_count }
             : x
-        );
-      });
+        )
+      );
     } catch (ex) {
       setErr(ex.message);
     } finally {
@@ -106,122 +86,231 @@ export default function Communities() {
     }
   };
 
+  const onCreated = (created) => {
+    setShowCreate(false);
+    setList((prev) => [{ ...created, is_member: true }, ...(prev || [])]);
+    navigate("/communities/" + created.id);
+  };
+
   return (
-    <div>
+    <div className="communities-page">
       <div className="split">
         <div>
-          <div className="eyebrow">Dashboard</div>
-          <h1>{user ? `Welcome back, ${user.username}` : "Browse communities"}</h1>
+          <h1>Communities</h1>
+          <p className="page-sub">Discover and join communities that match your interests.</p>
         </div>
+        {(!user || user.is_staff) && (
+          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+            + Create Community
+          </button>
+        )}
       </div>
 
       <div style={{ height: 18 }} />
-      <div className="stat-strip">
-        <div className="stat-card" onClick={() => document.querySelector(".community-grid")?.scrollIntoView({ behavior: "smooth" })}>
-          <span className="stat-card-icon">🧑‍🤝‍🧑</span>
-          {stats === null ? <Skeleton width={44} height={26} /> : <div className="stat-card-value">{myCommunityCount}</div>}
-          <div className="stat-card-label">Communities joined</div>
-        </div>
-        <div className="stat-card" onClick={() => navigate("/circles")}>
-          <span className="stat-card-icon">🎯</span>
-          {stats === null ? <Skeleton width={44} height={26} /> : <div className="stat-card-value">{stats.circles}</div>}
-          <div className="stat-card-label">Your circles</div>
-        </div>
-        <div className="stat-card" onClick={() => navigate("/messages")}>
-          <span className="stat-card-icon">💬</span>
-          {stats === null ? <Skeleton width={44} height={26} /> : <div className="stat-card-value">{stats.unread}</div>}
-          <div className="stat-card-label">Unread messages</div>
-        </div>
-        <div className="stat-card" onClick={() => navigate("/notifications")}>
-          <span className="stat-card-icon">🔔</span>
-          {stats === null ? <Skeleton width={44} height={26} /> : <div className="stat-card-value">{stats.notifications}</div>}
-          <div className="stat-card-label">New notifications</div>
+
+      <div className="communities-toolbar">
+        <input
+          type="text"
+          placeholder="Search communities…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="communities-search"
+        />
+        <div className="category-pills">
+          <button
+            type="button"
+            className={"category-pill" + (activeCategory === "all" ? " active" : "")}
+            onClick={() => setActiveCategory("all")}
+          >
+            All
+          </button>
+          {VISIBLE_PILLS.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              className={"category-pill" + (activeCategory === c.value ? " active" : "")}
+              onClick={() => setActiveCategory(c.value)}
+            >
+              {c.label}
+            </button>
+          ))}
+          <div className="category-pill-more" ref={moreRef}>
+            <button
+              type="button"
+              className={"category-pill" + (MORE_PILLS.some((c) => c.value === activeCategory) ? " active" : "")}
+              onClick={() => setMoreOpen((o) => !o)}
+            >
+              More ⌄
+            </button>
+            {moreOpen && (
+              <div className="category-pill-menu">
+                {MORE_PILLS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    className={activeCategory === c.value ? "active" : ""}
+                    onClick={() => {
+                      setActiveCategory(c.value);
+                      setMoreOpen(false);
+                    }}
+                  >
+                    {c.icon} {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <TrendingCarousel />
-
-      <input
-        type="text"
-        placeholder="Search communities…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        style={{ maxWidth: 420 }}
-      />
-      <div style={{ height: 16 }} />
-
       <ErrorBox message={err} />
 
-      {!query && suggested.length > 0 && (
-        <>
-          <div className="rail-title" style={{ fontSize: 16, marginBottom: 10 }}>🧑‍🤝‍🧑 Suggested for you</div>
-          <div className="suggested-row">
-            {suggested.map((c) => (
-              <div className="suggested-card" key={c.id} onClick={() => navigate("/communities/" + c.id)}>
-                <Avatar name={c.name} size={36} />
-                <div className="suggested-card-name">{c.name}</div>
-                <div className="suggested-card-meta">{c.member_count || 0} members</div>
-                <button className="btn btn-primary btn-sm" onClick={(e) => quickJoin(e, c)} disabled={joinBusy === c.id || c.is_pending}>
-                  {joinBusy === c.id ? "…" : c.is_pending ? "Requested" : "Join"}
-                </button>
-              </div>
-            ))}
-          </div>
-          <div style={{ height: 24 }} />
-        </>
-      )}
-
       {list === null && (
-        <div className="community-grid">
-          {[...Array(6)].map((_, i) => (
+        <div className="community-grid" style={{ marginTop: 20 }}>
+          {[...Array(4)].map((_, i) => (
             <div className="community-card" key={i} style={{ cursor: "default" }}>
-              <div className="community-card-head">
-                <Skeleton width={40} height={40} radius="50%" />
-              </div>
+              <Skeleton height={110} radius="var(--radius)" style={{ marginBottom: 12 }} />
               <Skeleton width="70%" height={17} style={{ marginBottom: 8 }} />
-              <Skeleton width="100%" height={13} style={{ marginBottom: 6 }} />
-              <Skeleton width="50%" height={13} />
+              <Skeleton width="100%" height={13} />
             </div>
           ))}
         </div>
       )}
+
+      {list !== null && myCommunities.length > 0 && (
+        <section className="comm-section">
+          <div className="comm-section-head">
+            <div>
+              <h2>My Communities</h2>
+              <p>Communities you have joined</p>
+            </div>
+          </div>
+          <div className="comm-row">
+            {myCommunities.map((c, i) => (
+              <div className="comm-card comm-card-joined" key={c.id} onClick={() => navigate("/communities/" + c.id)}>
+                <CommunityCover community={c} index={i} badge={<span className="comm-badge comm-badge-joined">Joined</span>} />
+                <div className="comm-card-body">
+                  <div className="comm-card-title">
+                    {c.name}
+                    {c.is_verified && <span className="verified-tick" title="Verified">✓</span>}
+                  </div>
+                  <div className="comm-card-desc">{c.description || "No description yet."}</div>
+                  <div className="comm-card-meta">👥 {fmtCount(c.member_count)} Members</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {list !== null && discover.length > 0 && (
+        <section className="comm-section">
+          <div className="comm-section-head">
+            <div>
+              <h2>Discover Communities</h2>
+              <p>Suggested for you</p>
+            </div>
+          </div>
+          <div className="comm-row comm-row-wrap">
+            {discover.map((c, i) => (
+              <div className="comm-card" key={c.id} onClick={() => navigate("/communities/" + c.id)}>
+                <CommunityCover community={c} index={i} />
+                <div className="comm-card-body">
+                  <div className="comm-card-title">
+                    {c.name}
+                    {c.is_verified && <span className="verified-tick" title="Verified">✓</span>}
+                  </div>
+                  <div className="comm-card-desc">{c.description || "No description yet."}</div>
+                  <div className="comm-card-foot">
+                    <span className="comm-card-meta">👥 {fmtCount(c.member_count)} Members</span>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={(e) => quickJoin(e, c)}
+                      disabled={joinBusy === c.id || c.is_pending}
+                    >
+                      {joinBusy === c.id ? <Spinner /> : c.is_pending ? "Requested" : "+ Join"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {list !== null && items.length === 0 && (
         <div className="empty-state">
           {query ? `No communities match "${query}".` : "No communities yet. Be the first to create one."}
         </div>
       )}
 
-      {list !== null && (
-        <div className="community-grid">
-          {items.map((c) => (
-            <div className="community-card" key={c.id} onClick={() => navigate("/communities/" + c.id)}>
-              <CardImageGallery images={c.images} />
-              <div className="community-card-head">
-                <Avatar name={c.name} size={40} />
-                {!c.is_public && <span className="badge badge-role">private</span>}
-                {c.is_member && <span className="badge badge-verified">joined</span>}
-                {!c.is_member && c.is_pending && <span className="badge badge-role">requested</span>}
-              </div>
-              <div className="entry-title">{c.name}</div>
-              <div className="community-card-desc">{c.description || "No description yet."}</div>
-              <div className="community-card-meta">
-                <span>{c.member_count || 0} members</span>
+      {list !== null && items.length > 0 && (
+        <div className="comm-bottom-grid">
+          <section className="trending-panel">
+            <div className="comm-section-head">
+              <div>
+                <h2>Trending Communities</h2>
+                <p>Most active communities right now</p>
               </div>
             </div>
-          ))}
+            <div className="trending-list">
+              {trending.map((c, i) => {
+                const meta = categoryMeta(c.category);
+                return (
+                  <div className="trending-row" key={c.id} onClick={() => navigate("/communities/" + c.id)}>
+                    <span className="trending-rank">🔥{i + 1}</span>
+                    <div className="trending-icon-wrap">
+                      {c.icon ? (
+                        <img className="trending-icon" src={c.icon} alt="" />
+                      ) : (
+                        <div className="trending-icon trending-icon-fallback">{(c.name || "?").charAt(0).toUpperCase()}</div>
+                      )}
+                    </div>
+                    <div className="trending-info">
+                      <div className="trending-name">
+                        {c.name}
+                        {c.is_verified && <span className="verified-tick" title="Verified">✓</span>}
+                        <span className="badge badge-tag trending-cat">{meta.label}</span>
+                      </div>
+                      <div className="trending-desc">{c.description || "No description yet."}</div>
+                    </div>
+                    <div className="trending-members">{fmtCount(c.member_count)} Members</div>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={(e) => quickJoin(e, c)}
+                      disabled={joinBusy === c.id || c.is_member || c.is_pending}
+                    >
+                      {joinBusy === c.id ? <Spinner /> : c.is_member ? "Joined" : c.is_pending ? "Requested" : "Join"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <aside className="popular-categories-panel">
+            <h2>Popular Categories</h2>
+            <p>Explore by your interests</p>
+            <div className="popular-categories-list">
+              {CATEGORIES.filter((c) => c.value !== "other").map((c) => (
+                <button
+                  type="button"
+                  key={c.value}
+                  className="popular-category-row"
+                  onClick={() => setActiveCategory(c.value)}
+                >
+                  <span className="popular-category-icon">{c.icon}</span>
+                  <span className="popular-category-label">{c.label}</span>
+                  <span className="popular-category-count">{categoryCounts[c.value] || 0} Communities</span>
+                </button>
+              ))}
+            </div>
+          </aside>
         </div>
       )}
 
-      {next && (
-        <button
-          type="button"
-          className="btn btn-secondary"
-          style={{ width: "100%", marginTop: 16 }}
-          onClick={loadMore}
-          disabled={loadingMore}
-        >
-          {loadingMore ? <Spinner /> : "Load more communities"}
-        </button>
+      {showCreate && (
+        <CreateCommunityModal onClose={() => setShowCreate(false)} onCreated={onCreated} />
       )}
     </div>
   );

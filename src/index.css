@@ -2606,3 +2606,259 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
 .comment-thread .comment-thread { margin-top: 8px; }
 .entry-head-row { display: flex; gap: 10px; align-items: flex-start; }
 .entry-head-row .entry-head { justify-content: space-between; width: 100%; }
+
+/* ===========================================================
+   Communities dashboard — My Communities / Discover / Trending /
+   Popular Categories (see pages/Communities.jsx). Reuses the app's
+   existing surface/border/gradient tokens so it reads as the same
+   product as the rest of the app, not a bolted-on new screen.
+   =========================================================== */
+.communities-page .page-sub { color: var(--ink-soft); font-size: 14px; margin-top: 4px; }
+
+.communities-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
+}
+.communities-search { max-width: 360px; flex: 1; min-width: 220px; margin: 0; }
+
+.category-pills { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; position: relative; }
+.category-pill {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-soft);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.category-pill:hover { border-color: var(--primary); color: var(--ink); }
+.category-pill.active {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--glow-primary-soft);
+}
+.category-pill-more { position: relative; }
+.category-pill-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  z-index: 20;
+}
+.category-pill-menu button {
+  border: none;
+  background: none;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.category-pill-menu button:hover { background: var(--surface-soft); color: var(--ink); }
+.category-pill-menu button.active { color: var(--primary-ink); font-weight: 700; }
+
+.comm-section { margin-bottom: 30px; }
+.comm-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.comm-section-head h2 { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin: 0; }
+.comm-section-head p { color: var(--ink-faint); font-size: 13px; margin: 2px 0 0; }
+
+.comm-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+.comm-row-wrap { flex-wrap: wrap; overflow: visible; }
+.comm-row::-webkit-scrollbar { height: 6px; }
+.comm-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.comm-card {
+  flex: 0 0 260px;
+  width: 260px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+.comm-row-wrap .comm-card { flex: 0 0 260px; }
+.comm-card:hover {
+  box-shadow: var(--shadow-md), 0 12px 28px -12px color-mix(in srgb, var(--primary) 35%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  transform: translateY(-3px);
+}
+.comm-card-body { padding: 30px 16px 16px; }
+.comm-card-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.comm-card-desc { color: var(--ink-soft); font-size: 13px; margin: 6px 0 12px; min-height: 34px; }
+.comm-card-meta { font-size: 12.5px; color: var(--ink-faint); }
+.comm-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+/* Cover + overlapping circular profile picture — the "cover and profile
+   are two separate images" layout used on every community card and on
+   the community detail hero. Uploading an animated .gif to either just
+   plays as-is in the <img> tag; no extra markup is needed for "live". */
+.comm-cover { position: relative; width: 100%; overflow: hidden; background: var(--surface-soft); }
+.comm-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.comm-cover-fallback { display: flex; }
+.comm-cover-icon-wrap {
+  position: absolute;
+  left: 16px;
+  bottom: -22px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  padding: 3px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.comm-cover-icon {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+.comm-cover-icon-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+}
+.comm-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.comm-badge-joined { background: var(--verified-soft); color: var(--verified); }
+
+/* Bottom two-column area: trending list + popular categories */
+.comm-bottom-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .comm-bottom-grid { grid-template-columns: 1fr; } }
+
+.trending-panel, .popular-categories-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.trending-list { display: flex; flex-direction: column; }
+.trending-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--border-soft);
+  cursor: pointer;
+}
+.trending-row:last-child { border-bottom: none; }
+.trending-row:hover .trending-name { color: var(--primary-ink); }
+.trending-rank { font-size: 13px; font-weight: 700; color: var(--ink-faint); width: 30px; flex-shrink: 0; }
+.trending-icon-wrap { flex-shrink: 0; }
+.trending-icon { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: block; }
+.trending-icon-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-family: var(--font-display);
+  background: var(--accent-gradient);
+}
+.trending-info { flex: 1; min-width: 0; }
+.trending-name { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14.5px; flex-wrap: wrap; }
+.trending-cat { font-size: 10.5px; padding: 2px 8px; }
+.trending-desc { color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trending-members { font-size: 13px; color: var(--ink-soft); white-space: nowrap; flex-shrink: 0; }
+@media (max-width: 640px) {
+  .trending-desc, .trending-members { display: none; }
+}
+
+.popular-categories-panel h2 { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin: 0; }
+.popular-categories-panel > p { color: var(--ink-faint); font-size: 12.5px; margin: 2px 0 14px; }
+.popular-categories-list { display: flex; flex-direction: column; gap: 2px; }
+.popular-category-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: none;
+  padding: 9px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.popular-category-row:hover { background: var(--surface-soft); }
+.popular-category-icon { font-size: 16px; }
+.popular-category-label { flex: 1; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.popular-category-count { font-size: 12px; color: var(--ink-faint); }
+
+/* Create Community modal — cover + profile picture pickers */
+.create-community-covers { position: relative; margin-bottom: 8px; }
+.create-community-cover-pick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  border-radius: var(--radius);
+  border: 1.5px dashed var(--border);
+  background: var(--surface-soft) center/cover no-repeat;
+  color: var(--ink-faint);
+  font-size: 13px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.create-community-cover-pick:hover { border-color: var(--primary); color: var(--ink-soft); }
+.create-community-icon-pick {
+  position: absolute;
+  left: 14px;
+  bottom: -20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid var(--surface);
+  background: var(--surface-soft) center/cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-faint);
+  font-size: 10px;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+.create-community-icon-pick:hover { color: var(--ink-soft); }
+.field-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+.field-hint { font-size: 12px; color: var(--ink-faint); margin-top: 26px; }
+.create-community-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-soft); cursor: pointer; }
+.create-community-checkbox input { width: auto; margin: 0; }

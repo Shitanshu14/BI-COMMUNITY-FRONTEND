@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { Spinner, ErrorBox, timeAgo, Avatar, VideoEmbed } from "../lib/helpers.jsx";
+import CommunityCover from "../components/CommunityCover.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useShareSheet } from "../context/ShareSheetContext.jsx";
 import { TOP_TYPES, POST_SUBTYPES, FILTER_TABS, groupOf, typeIcon, subtypeLabel, groupLabel, typeColorKey, encodeLink } from "../lib/postTypes.js";
@@ -313,18 +314,23 @@ export default function CommunityDetail() {
 
       {community && (
         <>
+          {/* Cover photo (banner) and profile picture (circular badge) are
+              separate images — same idea as the dashboard cards, just at
+              hero size. Either can be an animated .gif and will just play. */}
+          <CommunityCover community={community} height={180} />
+          <div style={{ height: 30 }} />
           {community.images && community.images.length > 0 && (
             <CardImageGallery images={community.images} height={220} className="circle-detail-gallery" />
           )}
           <div className="split" style={{ alignItems: "flex-start" }}>
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <Avatar name={community.name} size={48} />
-            <div>
-              <div className="eyebrow" style={{ marginBottom: 4 }}>
-                {community.is_public ? "Open community" : "Private community"}
-              </div>
-              <h1 style={{ marginBottom: 0 }}>{community.name}</h1>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 4 }}>
+              {community.is_public ? "Open community" : "Private community"}
             </div>
+            <h1 style={{ marginBottom: 0, display: "flex", alignItems: "center", gap: 6 }}>
+              {community.name}
+              {community.is_verified && <span className="verified-tick" title="Verified">✓</span>}
+            </h1>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             {community.is_member ? (
