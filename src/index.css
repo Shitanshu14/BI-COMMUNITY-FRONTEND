@@ -2683,7 +2683,17 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
 .comm-section-head p { color: var(--ink-faint); font-size: 13px; margin: 2px 0 0; }
 
 .comm-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
-.comm-row-wrap { flex-wrap: wrap; overflow: visible; }
+/* Discover/My-Communities style grids show exactly 4 cards per row on
+   desktop (matches the dashboard mockup), stepping down to 3 / 2 / 1 as
+   the viewport narrows — see breakpoints below. */
+.comm-row-wrap {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: visible;
+}
+@media (max-width: 1180px) { .comm-row-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .comm-row-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .comm-row-wrap { grid-template-columns: 1fr; } }
 .comm-row::-webkit-scrollbar { height: 6px; }
 .comm-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
@@ -2697,7 +2707,7 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   cursor: pointer;
   transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
-.comm-row-wrap .comm-card { flex: 0 0 260px; }
+.comm-row-wrap .comm-card { width: auto; }
 .comm-card:hover {
   box-shadow: var(--shadow-md), 0 12px 28px -12px color-mix(in srgb, var(--primary) 35%, transparent);
   border-color: color-mix(in srgb, var(--primary) 50%, transparent);

@@ -58,8 +58,7 @@ export default function Communities() {
   const myCommunities = filtered.filter((c) => c.is_member);
   const discover = [...filtered]
     .filter((c) => !c.is_member)
-    .sort((a, b) => (b.member_count || 0) - (a.member_count || 0))
-    .slice(0, 6);
+    .sort((a, b) => (b.member_count || 0) - (a.member_count || 0));
   const trending = [...filtered].sort((a, b) => (b.member_count || 0) - (a.member_count || 0)).slice(0, 5);
 
   const categoryCounts = CATEGORIES.reduce((acc, c) => {
