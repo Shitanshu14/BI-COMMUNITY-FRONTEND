@@ -2,6 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { api } from "../lib/api.js";
 import { ErrorBox, Spinner } from "../lib/helpers.jsx";
 
+const NAME_MIN = 3;
+const NAME_MAX = 60;
+const DESC_MAX = 300;
+
 const CATEGORIES = [
   { value: "technology", label: "Technology" },
   { value: "education", label: "Education" },
@@ -47,8 +51,13 @@ export default function CreateCommunityModal({ onClose, onCreated }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       setErr("Give your community a name first.");
+      return;
+    }
+    if (trimmedName.length < NAME_MIN) {
+      setErr(`Community name needs at least ${NAME_MIN} characters.`);
       return;
     }
     setBusy(true);
@@ -107,12 +116,30 @@ export default function CreateCommunityModal({ onClose, onCreated }) {
               Upload an animated .gif to either for a live, moving look.
             </div>
 
-            <label className="field-label">Community name</label>
-            <input ref={nameRef} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Web Development" maxLength={100} />
+            <label className="field-label">
+              Community name <span className="char-count">{name.length}/{NAME_MAX}</span>
+            </label>
+            <input
+              ref={nameRef}
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value.slice(0, NAME_MAX))}
+              placeholder="e.g. Web Development"
+              minLength={NAME_MIN}
+              maxLength={NAME_MAX}
+            />
 
             <div style={{ height: 12 }} />
-            <label className="field-label">Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's this community about?" rows={3} />
+            <label className="field-label">
+              Description <span className="char-count">{description.length}/{DESC_MAX}</span>
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value.slice(0, DESC_MAX))}
+              placeholder="What's this community about?"
+              rows={3}
+              maxLength={DESC_MAX}
+            />
 
             <div style={{ height: 12 }} />
             <label className="field-label">Category</label>

@@ -189,6 +189,17 @@ export default function Sidebar() {
         </NavLink>
       </nav>
 
+      <div className="sidebar-promo">
+        <div className="sidebar-promo-icon">{icons.communities}</div>
+        <div className="sidebar-promo-title">Create. Connect. Grow Together</div>
+        <p className="sidebar-promo-sub">
+          Join communities that match your passion and level up together.
+        </p>
+        <button type="button" className="btn btn-primary sidebar-promo-btn" onClick={() => navigate("/communities")}>
+          Explore Communities
+        </button>
+      </div>
+
       <div className="sidebar-foot">
         <div className="theme-toggle-row">
           <span>{theme === "dark" ? "🌙" : "☀️"} Dark Mode</span>

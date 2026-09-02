@@ -4,6 +4,10 @@ import { api } from "../lib/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Avatar, ErrorBox, Spinner, timeAgo } from "../lib/helpers.jsx";
 
+const GROUP_NAME_MIN = 3;
+const GROUP_NAME_MAX = 60;
+const GROUP_DESC_MAX = 300;
+
 const STAT_BOXES = [
   { key: "total_users", label: "Total users", icon: "👥" },
   { key: "active_users", label: "Active users", icon: "✅" },
@@ -287,7 +291,12 @@ function GroupPanel({ kind }) {
 
   const createGroup = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    const trimmedName = form.name.trim();
+    if (!trimmedName) return;
+    if (trimmedName.length < GROUP_NAME_MIN) {
+      setErr(`Name needs at least ${GROUP_NAME_MIN} characters.`);
+      return;
+    }
     setCreateBusy(true);
     setErr("");
     try {
@@ -354,20 +363,23 @@ function GroupPanel({ kind }) {
 
       {creating && (
         <form onSubmit={createGroup} className="card" style={{ marginBottom: 16 }}>
-          <label>Name</label>
+          <label>Name <span className="char-count">{form.name.length}/{GROUP_NAME_MAX}</span></label>
           <input
             type="text"
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) => setForm({ ...form, name: e.target.value.slice(0, GROUP_NAME_MAX) })}
             placeholder={kind === "communities" ? "e.g. Design Community" : "e.g. Core Team"}
+            minLength={GROUP_NAME_MIN}
+            maxLength={GROUP_NAME_MAX}
             autoFocus
           />
-          <label>Description (optional)</label>
+          <label>Description (optional) <span className="char-count">{form.description.length}/{GROUP_DESC_MAX}</span></label>
           <textarea
             value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, GROUP_DESC_MAX) })}
+            maxLength={GROUP_DESC_MAX}
           />
-          <button className="btn btn-primary btn-sm" disabled={createBusy || !form.name.trim()}>
+          <button className="btn btn-primary btn-sm" disabled={createBusy || form.name.trim().length < GROUP_NAME_MIN}>
             {createBusy ? <Spinner /> : "Create " + label}
           </button>
         </form>
