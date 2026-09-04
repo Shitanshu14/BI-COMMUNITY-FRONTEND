@@ -14,6 +14,12 @@ const icons = {
       <path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6h4v6h3.5a1 1 0 0 0 1-1v-9" />
     </svg>
   ),
+  circles: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="3.2" />
+    </svg>
+  ),
   search: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="7" />
@@ -75,6 +81,10 @@ export default function MobileNav() {
       <NavLink to="/communities" className={linkClass} end>
         {icons.home}
         <span>Communities</span>
+      </NavLink>
+      <NavLink to="/circles" className={linkClass}>
+        {icons.circles}
+        <span>Circles</span>
       </NavLink>
       <button type="button" className="mobile-nav-link" onClick={() => navigate("/search")}>
         {icons.search}

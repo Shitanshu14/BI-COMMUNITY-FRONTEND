@@ -99,8 +99,12 @@ export default function Communities() {
           <p className="page-sub">Discover and join communities that match your interests.</p>
         </div>
         <div className="comm-status-chip">
-          <div className="comm-status-item">
-            <span className="comm-status-icon">🔥</span>
+          <div
+            className={"comm-status-item" + (trending[0] ? " comm-status-item-link" : "")}
+            onClick={trending[0] ? () => navigate("/communities/" + trending[0].id) : undefined}
+            title={trending[0] ? "Open " + trending[0].name : undefined}
+          >
+            <span className="comm-status-icon comm-status-icon-live">🔥</span>
             <div>
               <div className="comm-status-label">Trending now</div>
               <div className="comm-status-value">{trending[0] ? trending[0].name : "—"}</div>

@@ -111,6 +111,10 @@ export default function Circles() {
     }
   };
 
+  const trendingCircle = circles && circles.length
+    ? [...circles].sort((a, b) => (b.member_count || 0) - (a.member_count || 0))[0]
+    : null;
+
   return (
     <div className="circles-page">
       <div className="split">
@@ -122,6 +126,30 @@ export default function Circles() {
           {showCreate ? "Cancel" : "+ New circle"}
         </button>
       </div>
+
+      {circles !== null && circles.length > 0 && (
+        <div className="comm-status-chip" style={{ marginBottom: 18 }}>
+          <div
+            className={"comm-status-item" + (trendingCircle ? " comm-status-item-link" : "")}
+            onClick={trendingCircle ? () => navigate("/circles/" + trendingCircle.id) : undefined}
+            title={trendingCircle ? "Open " + trendingCircle.name : undefined}
+          >
+            <span className="comm-status-icon comm-status-icon-live">🔥</span>
+            <div>
+              <div className="comm-status-label">Most active</div>
+              <div className="comm-status-value">{trendingCircle ? trendingCircle.name : "—"}</div>
+            </div>
+          </div>
+          <div className="comm-status-divider" />
+          <div className="comm-status-item">
+            <span className="comm-status-icon">🔒</span>
+            <div>
+              <div className="comm-status-label">Circles</div>
+              <div className="comm-status-value">{circles.length} joined</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ height: 8 }} />
       <p style={{ color: "var(--muted, #888)", maxWidth: 560 }}>

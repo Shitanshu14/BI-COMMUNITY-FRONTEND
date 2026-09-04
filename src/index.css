@@ -2625,12 +2625,18 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
     align-items: stretch;
     gap: 10px;
   }
-  .split > div:last-child {
+  /* :not(.comm-status-chip) — the Communities page reuses .split's last
+     slot for the trending/count status chip, not an action-button row.
+     Without this exclusion, the chip's own flex layout (icon + label +
+     divider + icon + label, gap 18px, nowrap) gets overridden by this
+     rule (higher specificity), which crams and wraps it into a broken
+     mess on narrow phones. */
+  .split > div:last-child:not(.comm-status-chip) {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
-  .split > div:last-child .btn {
+  .split > div:last-child:not(.comm-status-chip) .btn {
     flex: 1 1 auto;
     justify-content: center;
   }
@@ -2681,6 +2687,7 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   }
   .mobile-nav-link {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2689,11 +2696,17 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
     border: none;
     background: none;
     color: var(--ink-faint);
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 600;
     cursor: pointer;
   }
-  .mobile-nav-link svg { width: 20px; height: 20px; }
+  .mobile-nav-link span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mobile-nav-link svg { width: 19px; height: 19px; flex-shrink: 0; }
   .mobile-nav-link.active { color: var(--primary-ink); }
   .mobile-nav-badge {
     position: absolute;
@@ -2868,6 +2881,8 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   padding: 10px 20px;
 }
 .comm-status-item { display: flex; align-items: center; gap: 10px; }
+.comm-status-item-link { cursor: pointer; border-radius: var(--radius-sm); transition: opacity 0.15s ease; }
+.comm-status-item-link:hover { opacity: 0.8; }
 .comm-status-icon {
   width: 34px;
   height: 34px;
@@ -2878,6 +2893,12 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   font-size: 16px;
   background: var(--surface-soft);
   flex-shrink: 0;
+}
+/* Instagram-style "live status" ring around the trending icon — signals
+   this one is tappable and leads straight to that community/circle. */
+.comm-status-icon-live {
+  background: var(--accent-gradient);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
 }
 .comm-status-label { font-size: 11px; color: var(--ink-faint); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
 .comm-status-value {

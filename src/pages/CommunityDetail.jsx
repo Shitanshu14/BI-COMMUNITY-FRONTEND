@@ -332,7 +332,7 @@ export default function CommunityDetail() {
               {community.is_verified && <span className="verified-tick" title="Verified">✓</span>}
             </h1>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             {community.is_member ? (
               <>
                 <span className="badge badge-verified">✓ Joined</span>
