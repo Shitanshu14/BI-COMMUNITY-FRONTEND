@@ -114,9 +114,9 @@ export default function Messages() {
             <Avatar name={r.user.username} src={r.user.avatar} size={44} />
             <div className="user-row-meta">
               <div className="user-row-name">
-                {r.user.username}
+                <span className="truncate">{r.user.username}</span>
                 {r.user.is_verified && <span className="verified-tick">✓</span>}
-                {r.unread && <span className="badge badge-type" style={{ marginLeft: 6 }}>new</span>}
+                {r.unread && <span className="badge badge-type" style={{ marginLeft: 6, flexShrink: 0 }}>new</span>}
               </div>
               <div className="user-row-sub" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {r.last_message}

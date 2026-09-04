@@ -81,7 +81,7 @@ export default function SavedPosts() {
                   onClick={() => p.author?.id && navigate("/profile/" + p.author.id)}
                   style={{ cursor: "pointer" }}
                 >
-                  {p.author?.username || "Member"}
+                  <span className="truncate">{p.author?.username || "Member"}</span>
                   {p.author?.is_verified && <span className="verified-tick">✓</span>}
                 </div>
                 <div className="post-sub">{timeAgo(p.created_at)}</div>
@@ -95,7 +95,16 @@ export default function SavedPosts() {
             </div>
             <p className="post-body">{p.body}</p>
             <PostExtras post={p} compact />
-            {p.image && <img src={p.image} alt="" className="post-image" loading="lazy" decoding="async" />}
+            {p.image && (
+              <img
+                src={p.image}
+                alt=""
+                className="post-image"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            )}
             {(() => {
               const embed = extractVideoEmbed(p.body);
               return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;

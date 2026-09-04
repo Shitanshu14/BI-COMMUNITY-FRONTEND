@@ -2,10 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { ErrorBox, Skeleton, Spinner } from "../lib/helpers.jsx";
-import { useAuth } from "../context/AuthContext.jsx";
 import { CATEGORIES, categoryMeta } from "../lib/communityCategories.js";
 import CommunityCover from "../components/CommunityCover.jsx";
-import CreateCommunityModal from "../components/CreateCommunityModal.jsx";
 
 const VISIBLE_PILLS = CATEGORIES.slice(0, 5); // Technology, Education, Social, Gaming, Business
 const MORE_PILLS = CATEGORIES.slice(5); // Entertainment, Other
@@ -16,16 +14,24 @@ function fmtCount(n) {
   return String(n);
 }
 
+// Own bit of state so a broken icon URL falls back to the initial-letter
+// tile instead of the browser's default broken-image icon.
+function TrendingIcon({ src, name }) {
+  const [failed, setFailed] = useState(false);
+  if (src && !failed) {
+    return <img className="trending-icon" src={src} alt="" onError={() => setFailed(true)} />;
+  }
+  return <div className="trending-icon trending-icon-fallback">{(name || "?").charAt(0).toUpperCase()}</div>;
+}
+
 export default function Communities() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [list, setList] = useState(null);
   const [err, setErr] = useState("");
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [moreOpen, setMoreOpen] = useState(false);
   const [joinBusy, setJoinBusy] = useState(null);
-  const [showCreate, setShowCreate] = useState(false);
   const moreRef = useRef(null);
 
   const load = async (search = "") => {
@@ -85,12 +91,6 @@ export default function Communities() {
     }
   };
 
-  const onCreated = (created) => {
-    setShowCreate(false);
-    setList((prev) => [{ ...created, is_member: true }, ...(prev || [])]);
-    navigate("/communities/" + created.id);
-  };
-
   return (
     <div className="communities-page">
       <div className="split">
@@ -98,11 +98,23 @@ export default function Communities() {
           <h1>Communities</h1>
           <p className="page-sub">Discover and join communities that match your interests.</p>
         </div>
-        {(!user || user.is_staff) && (
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-            + Create Community
-          </button>
-        )}
+        <div className="comm-status-chip">
+          <div className="comm-status-item">
+            <span className="comm-status-icon">🔥</span>
+            <div>
+              <div className="comm-status-label">Trending now</div>
+              <div className="comm-status-value">{trending[0] ? trending[0].name : "—"}</div>
+            </div>
+          </div>
+          <div className="comm-status-divider" />
+          <div className="comm-status-item">
+            <span className="comm-status-icon">👥</span>
+            <div>
+              <div className="comm-status-label">Communities</div>
+              <div className="comm-status-value">{fmtCount(items.length)} active</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div style={{ height: 18 }} />
@@ -259,15 +271,11 @@ export default function Communities() {
                   <div className="trending-row" key={c.id} onClick={() => navigate("/communities/" + c.id)}>
                     <span className="trending-rank">🔥{i + 1}</span>
                     <div className="trending-icon-wrap">
-                      {c.icon ? (
-                        <img className="trending-icon" src={c.icon} alt="" />
-                      ) : (
-                        <div className="trending-icon trending-icon-fallback">{(c.name || "?").charAt(0).toUpperCase()}</div>
-                      )}
+                      <TrendingIcon src={c.icon} name={c.name} />
                     </div>
                     <div className="trending-info">
                       <div className="trending-name">
-                        {c.name}
+                        <span className="truncate">{c.name}</span>
                         {c.is_verified && <span className="verified-tick" title="Verified">✓</span>}
                         <span className="badge badge-tag trending-cat">{meta.label}</span>
                       </div>
@@ -306,10 +314,6 @@ export default function Communities() {
             </div>
           </aside>
         </div>
-      )}
-
-      {showCreate && (
-        <CreateCommunityModal onClose={() => setShowCreate(false)} onCreated={onCreated} />
       )}
     </div>
   );

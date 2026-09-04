@@ -15,10 +15,15 @@ function shareEndpoint(kind, targetId) {
 const KIND_LABEL = { post: "Post", question: "Question", community: "Community", circle: "Circle" };
 
 function ContentPreview({ item }) {
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <div className="share-preview-card">
       <div className="share-preview-icon">
-        {item.image ? <img src={item.image} alt="" /> : <span>{item.type === "question" ? "❓" : item.type === "community" ? "🏘️" : item.type === "circle" ? "⭕" : "📝"}</span>}
+        {item.image && !imgFailed ? (
+          <img src={item.image} alt="" onError={() => setImgFailed(true)} />
+        ) : (
+          <span>{item.type === "question" ? "❓" : item.type === "community" ? "🏘️" : item.type === "circle" ? "⭕" : "📝"}</span>
+        )}
       </div>
       <div style={{ minWidth: 0 }}>
         <div className="share-preview-kind">{KIND_LABEL[item.type] || "Content"}</div>

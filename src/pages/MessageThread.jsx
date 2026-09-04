@@ -41,6 +41,8 @@ export function SharedMessageCard({ shared, mine }) {
   const { kind, data } = shared;
   const meta = SHARED_KIND_META[kind];
   const image = data.image || data.icon || null;
+  const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => setImgFailed(false), [image]);
 
   let href = "#";
   let title = data.title || data.name;
@@ -62,7 +64,11 @@ export function SharedMessageCard({ shared, mine }) {
   return (
     <Link to={href} className={"shared-card" + (mine ? " mine" : "")}>
       <div className="shared-card-media">
-        {image ? <img src={image} alt="" /> : <span className="shared-card-icon">{meta.icon}</span>}
+        {image && !imgFailed ? (
+          <img src={image} alt="" onError={() => setImgFailed(true)} />
+        ) : (
+          <span className="shared-card-icon">{meta.icon}</span>
+        )}
       </div>
       <div className="shared-card-body">
         <div className="shared-card-kind">{meta.icon} {meta.label}</div>
@@ -167,27 +173,26 @@ export default function MessageThread() {
       <ErrorBox message={err} />
 
       {otherUser && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-          <Avatar name={otherUser.username} src={otherUser.avatar} size={38} />
-          <div>
-            <h1 style={{ margin: 0, fontSize: 20 }}>
-              {otherUser.username}
+        <div className="chat-header">
+          <div className="chat-header-avatar">
+            <Avatar name={otherUser.username} src={otherUser.avatar} size={42} />
+            {status === "live" && <span className="chat-header-dot" title="Online" />}
+          </div>
+          <div className="chat-header-meta">
+            <h1>
+              <span className="truncate">{otherUser.username}</span>
               {otherUser.is_verified && <span className="verified-tick">✓</span>}
             </h1>
-            <div className="subtle" style={{ fontSize: 12 }}>{otherUser.headline || otherUser.role}</div>
+            <div className={"chat-header-status " + (status === "live" ? "live" : status === "down" || status === "blocked" ? "down" : "")}>
+              {status === "live"
+                ? "online"
+                : status === "blocked"
+                ? "You can't message this user."
+                : status === "down"
+                ? "disconnected — messages won't send"
+                : otherUser.headline || otherUser.role || "connecting…"}
+            </div>
           </div>
-        </div>
-      )}
-
-      {!err && (
-        <div className={"chat-status " + (status === "live" ? "live" : status === "down" || status === "blocked" ? "down" : "")}>
-          {status === "live"
-            ? "● connected"
-            : status === "blocked"
-            ? "You can't message this user."
-            : status === "down"
-            ? "● disconnected — messages won't send"
-            : "connecting…"}
         </div>
       )}
 
@@ -231,8 +236,8 @@ export default function MessageThread() {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          <button className="btn btn-primary" disabled={status !== "live"}>
-            Send
+          <button className="chat-send-btn" disabled={status !== "live" || !text.trim()} aria-label="Send message" title="Send">
+            ➤
           </button>
         </form>
       )}

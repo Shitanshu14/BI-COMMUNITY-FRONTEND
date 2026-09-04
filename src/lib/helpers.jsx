@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 export function timeAgo(iso) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
   if (diff < 60) return "just now";
@@ -38,13 +40,20 @@ function colorFor(seed) {
 
 export function Avatar({ name, src, size = 40 }) {
   const initial = (name || "?").trim().charAt(0).toUpperCase();
-  if (src) {
+  // Reset the "did this image fail" flag whenever the src actually changes
+  // (e.g. switching between users in a list), otherwise a previous
+  // broken-image result would stick around and hide a perfectly good src.
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+
+  if (src && !failed) {
     return (
       <img
         src={src}
         alt={name || "avatar"}
         className="avatar avatar-img"
         style={{ width: size, height: size }}
+        onError={() => setFailed(true)}
       />
     );
   }

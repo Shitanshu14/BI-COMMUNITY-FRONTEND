@@ -8,6 +8,20 @@ const GROUP_NAME_MIN = 3;
 const GROUP_NAME_MAX = 60;
 const GROUP_DESC_MAX = 300;
 
+// This is the *only* place a community gets created (the old "+ Create
+// Community" flow on the public Communities page has been retired — see
+// GroupPanel below), so the community-only fields (cover, profile icon,
+// category, who-can-join) live here now instead of in a separate modal.
+const GROUP_CATEGORIES = [
+  { value: "technology", label: "Technology" },
+  { value: "education", label: "Education" },
+  { value: "social", label: "Social" },
+  { value: "gaming", label: "Gaming" },
+  { value: "business", label: "Business" },
+  { value: "entertainment", label: "Entertainment" },
+  { value: "other", label: "Other" },
+];
+
 const STAT_BOXES = [
   { key: "total_users", label: "Total users", icon: "👥" },
   { key: "active_users", label: "Active users", icon: "✅" },
@@ -176,7 +190,7 @@ function UsersPanel({ onUserChanged }) {
                 <Avatar name={u.username} src={u.avatar} size={36} />
                 <div className="support-user-main">
                   <div className="support-user-name">
-                    {u.username}
+                    <span className="truncate">{u.username}</span>
                     {u.is_verified && <span className="verified-tick" title="Verified">✓</span>}
                     {u.is_staff && <span className="badge badge-tag" style={{ marginLeft: 6 }}>staff</span>}
                     {u.is_support && <span className="badge badge-tag" style={{ marginLeft: 6 }}>support</span>}
@@ -257,6 +271,13 @@ function GroupPanel({ kind }) {
   const [membersErr, setMembersErr] = useState("");
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", description: "" });
+  const [category, setCategory] = useState("other");
+  const [isPublic, setIsPublic] = useState(true);
+  const [joinMode, setJoinMode] = useState("open");
+  const [cover, setCover] = useState(null);
+  const [coverPreview, setCoverPreview] = useState("");
+  const [icon, setIcon] = useState(null);
+  const [iconPreview, setIconPreview] = useState("");
   const [createBusy, setCreateBusy] = useState(false);
   const [deleteBusyId, setDeleteBusyId] = useState(null);
   const [removeBusyId, setRemoveBusyId] = useState(null);
@@ -289,6 +310,23 @@ function GroupPanel({ kind }) {
       .catch((ex) => setMembersErr(ex.message));
   };
 
+  const pickFile = (file, setFile, setPreview) => {
+    if (!file) return;
+    setFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const resetForm = () => {
+    setForm({ name: "", description: "" });
+    setCategory("other");
+    setIsPublic(true);
+    setJoinMode("open");
+    setCover(null);
+    setCoverPreview("");
+    setIcon(null);
+    setIconPreview("");
+  };
+
   const createGroup = async (e) => {
     e.preventDefault();
     const trimmedName = form.name.trim();
@@ -300,9 +338,26 @@ function GroupPanel({ kind }) {
     setCreateBusy(true);
     setErr("");
     try {
-      const created = await api("/api/support/" + kind + "/", { method: "POST", body: form });
+      // Communities carry a cover photo + profile icon + category + join
+      // settings, so they need a multipart body; circles stay on the
+      // plain JSON shape they always used.
+      let body;
+      if (kind === "communities") {
+        const fd = new FormData();
+        fd.append("name", trimmedName);
+        fd.append("description", form.description.trim());
+        fd.append("category", category);
+        fd.append("is_public", isPublic ? "true" : "false");
+        fd.append("join_mode", joinMode);
+        if (cover) fd.append("cover_image", cover);
+        if (icon) fd.append("icon", icon);
+        body = fd;
+      } else {
+        body = form;
+      }
+      const created = await api("/api/support/" + kind + "/", { method: "POST", body });
       setGroups((prev) => [...(prev || []), created].sort((a, b) => a.name.localeCompare(b.name)));
-      setForm({ name: "", description: "" });
+      resetForm();
       setCreating(false);
     } catch (ex) {
       setErr(ex.message);
@@ -356,13 +411,53 @@ function GroupPanel({ kind }) {
   return (
     <div>
       <div className="support-toolbar">
-        <button className="btn btn-primary btn-sm" onClick={() => setCreating((v) => !v)}>
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={() => {
+            if (creating) resetForm();
+            setCreating((v) => !v);
+          }}
+        >
           {creating ? "Cancel" : "+ New " + label}
         </button>
       </div>
 
       {creating && (
         <form onSubmit={createGroup} className="card" style={{ marginBottom: 16 }}>
+          {kind === "communities" && (
+            <>
+              <div className="create-community-covers">
+                <label
+                  className="create-community-cover-pick"
+                  style={coverPreview ? { backgroundImage: `url(${coverPreview})` } : undefined}
+                >
+                  {!coverPreview && <span>+ Cover photo (GIF ok)</span>}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => pickFile(e.target.files?.[0], setCover, setCoverPreview)}
+                    style={{ display: "none" }}
+                  />
+                </label>
+                <label
+                  className="create-community-icon-pick"
+                  style={iconPreview ? { backgroundImage: `url(${iconPreview})` } : undefined}
+                >
+                  {!iconPreview && <span>+ Profile</span>}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => pickFile(e.target.files?.[0], setIcon, setIconPreview)}
+                    style={{ display: "none" }}
+                  />
+                </label>
+              </div>
+              <div className="field-hint" style={{ marginBottom: 16 }}>
+                Cover photo and profile picture are separate — an animated .gif on either plays as-is.
+              </div>
+            </>
+          )}
+
           <label>Name <span className="char-count">{form.name.length}/{GROUP_NAME_MAX}</span></label>
           <input
             type="text"
@@ -379,6 +474,31 @@ function GroupPanel({ kind }) {
             onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, GROUP_DESC_MAX) })}
             maxLength={GROUP_DESC_MAX}
           />
+
+          {kind === "communities" && (
+            <>
+              <label>Category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                {GROUP_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+
+              <label>Who can join</label>
+              <select value={joinMode} onChange={(e) => setJoinMode(e.target.value)}>
+                <option value="open">Open — anyone can join instantly</option>
+                <option value="approval">Registration required — an admin must approve</option>
+              </select>
+
+              <div style={{ height: 4 }} />
+              <label className="create-community-checkbox">
+                <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+                Public — visible to everyone, not just members
+              </label>
+              <div style={{ height: 10 }} />
+            </>
+          )}
+
           <button className="btn btn-primary btn-sm" disabled={createBusy || form.name.trim().length < GROUP_NAME_MIN}>
             {createBusy ? <Spinner /> : "Create " + label}
           </button>
@@ -396,7 +516,7 @@ function GroupPanel({ kind }) {
               <div className="support-group-row">
                 <div className="support-user-main" style={{ cursor: "pointer" }} onClick={() => openMembers(g)}>
                   <div className="support-user-name">
-                    {g.name}
+                    <span className="truncate">{g.name}</span>
                     {kind === "communities" && g.is_on_hold && (
                       <span className="badge badge-unsolved" style={{ marginLeft: 8 }}>⏸️ On hold</span>
                     )}
@@ -437,7 +557,7 @@ function GroupPanel({ kind }) {
                       <Avatar name={m.username} src={m.avatar} size={28} />
                       <div className="support-user-main">
                         <div className="support-user-name">
-                          {m.username}
+                          <span className="truncate">{m.username}</span>
                           <span className="badge badge-tag" style={{ marginLeft: 6 }}>{m.role}</span>
                         </div>
                         <div className="support-user-sub">{m.email} · joined {timeAgo(m.joined_at)}</div>
@@ -516,7 +636,7 @@ function TicketsPanel() {
             <div className="support-user-row" key={t.id} style={{ alignItems: "flex-start" }}>
               <div className="support-user-main">
                 <div className="support-user-name">
-                  {t.username || "(no username given)"}
+                  <span className="truncate">{t.username || "(no username given)"}</span>
                   {t.email && <span className="support-user-sub" style={{ marginLeft: 8 }}>{t.email}</span>}
                 </div>
                 <div style={{ fontSize: 13.5, marginTop: 4, whiteSpace: "pre-wrap" }}>{t.message}</div>

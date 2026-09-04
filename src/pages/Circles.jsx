@@ -112,7 +112,7 @@ export default function Circles() {
   };
 
   return (
-    <div>
+    <div className="circles-page">
       <div className="split">
         <div>
           <div className="eyebrow">Circles</div>

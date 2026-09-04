@@ -46,6 +46,7 @@ export default function CardImageGallery({ images, height = 132, className = "" 
           loading="lazy"
           decoding="async"
           className={"card-gallery-slide" + (i === index ? " active" : "")}
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
         />
       ))}
       {urls.length > 1 && (

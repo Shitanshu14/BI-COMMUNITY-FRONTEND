@@ -156,8 +156,8 @@ export default function Chat({ kind = "community" }) {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          <button className="btn btn-primary" disabled={status !== "live"}>
-            Send
+          <button className="chat-send-btn" disabled={status !== "live" || !text.trim()} aria-label="Send message" title="Send">
+            ➤
           </button>
         </form>
       )}

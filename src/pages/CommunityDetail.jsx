@@ -635,7 +635,7 @@ export default function CommunityDetail() {
                     <Avatar name={p.author?.username || "member"} src={p.author?.avatar} size={40} />
                     <div className="post-head-meta">
                       <div className="post-author">
-                        {p.author?.username || "Member"}
+                        <span className="truncate">{p.author?.username || "Member"}</span>
                         {p.author?.is_verified && <span className="verified-tick">✓</span>}
                       </div>
                       <div className="post-sub">

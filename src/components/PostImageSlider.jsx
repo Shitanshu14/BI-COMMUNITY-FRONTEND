@@ -33,7 +33,13 @@ export default function PostImageSlider({ images, image, className = "", chip = 
       <div className="post-slider-track" ref={trackRef} onScroll={onScroll}>
         {urls.map((src, i) => (
           <div className="post-slider-slide" key={src + i}>
-            <img src={src} alt="" loading="lazy" decoding="async" />
+            <img
+              src={src}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
           </div>
         ))}
       </div>

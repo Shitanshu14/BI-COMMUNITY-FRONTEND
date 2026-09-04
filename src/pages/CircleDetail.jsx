@@ -267,7 +267,7 @@ export default function CircleDetail() {
           <div className="gallery-picker">
             {(circle.images || []).map((im) => (
               <div className="gallery-picker-thumb" key={im.id}>
-                <img src={im.image} alt="" />
+                <img src={im.image} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <button type="button" className="gallery-picker-remove" onClick={() => removeExistingImage(im.id)}>
                   ✕
                 </button>

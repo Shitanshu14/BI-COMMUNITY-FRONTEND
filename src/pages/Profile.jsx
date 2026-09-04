@@ -9,6 +9,14 @@ import PostExtras from "../components/PostExtras.jsx";
 
 /** "Saved" used to be its own sidebar page — now it's a tab on your own
  * profile, right next to Posts, so everything about you lives in one place. */
+function PostTileImage({ src, fallback }) {
+  const [failed, setFailed] = useState(false);
+  if (src && !failed) {
+    return <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />;
+  }
+  return fallback;
+}
+
 function SavedTab() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState(null);
@@ -71,7 +79,7 @@ function SavedTab() {
               <Avatar name={p.author?.username || "member"} src={p.author?.avatar} size={32} />
               <div className="post-head-meta">
                 <div className="post-author" onClick={() => p.author?.id && navigate("/profile/" + p.author.id)} style={{ cursor: "pointer" }}>
-                  {p.author?.username || "Member"}
+                  <span className="truncate">{p.author?.username || "Member"}</span>
                   {p.author?.is_verified && <span className="verified-tick">✓</span>}
                 </div>
                 <div className="post-sub">{timeAgo(p.created_at)}</div>
@@ -81,7 +89,16 @@ function SavedTab() {
             <div className="post-title" onClick={() => navigate("/posts/" + p.id)}>{p.title}</div>
             <p className="post-body">{p.body}</p>
             <PostExtras post={p} compact />
-            {p.image && <img src={p.image} alt="" className="post-image" loading="lazy" decoding="async" />}
+            {p.image && (
+              <img
+                src={p.image}
+                alt=""
+                className="post-image"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            )}
             {(() => {
               const embed = extractVideoEmbed(p.body);
               return embed && <VideoEmbed src={embed.src} provider={embed.provider} />;
@@ -222,7 +239,7 @@ function FollowListModal({ userId, kind, onClose }) {
                 <Avatar name={u.username} src={u.avatar} size={38} />
                 <div className="user-row-meta">
                   <div className="user-row-name">
-                    {u.username}
+                    <span className="truncate">{u.username}</span>
                     {u.is_verified && <span className="verified-tick">✓</span>}
                   </div>
                   <div className="user-row-sub">{u.headline || u.role}</div>
@@ -626,14 +643,15 @@ export default function Profile() {
             {posts &&
               posts.map((p) => (
                 <div className="profile-post-tile" key={p.id} onClick={() => navigate("/posts/" + p.id)}>
-                  {p.image ? (
-                    <img src={p.image} alt="" loading="lazy" decoding="async" />
-                  ) : (
-                    <div className="profile-post-tile-fallback">
-                      <span>{typeIcon(p)}</span>
-                      <div className="profile-post-tile-title">{p.title}</div>
-                    </div>
-                  )}
+                  <PostTileImage
+                    src={p.image}
+                    fallback={
+                      <div className="profile-post-tile-fallback">
+                        <span>{typeIcon(p)}</span>
+                        <div className="profile-post-tile-title">{p.title}</div>
+                      </div>
+                    }
+                  />
                   <div className="profile-post-tile-overlay">
                     <span>♥ {p.like_count || 0}</span>
                     <span>💬 {p.comment_count || 0}</span>

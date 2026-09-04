@@ -5,6 +5,8 @@
 // instead of a broken image, cycled by index so a grid of un-branded
 // communities still reads as individually colored rather than one flat
 // repeated block.
+import { useState, useEffect } from "react";
+
 const GRADIENTS = [
   "linear-gradient(135deg, var(--grad-1))",
   "linear-gradient(135deg, var(--grad-2))",
@@ -24,17 +26,36 @@ export default function CommunityCover({ community, index = 0, height = 110, bad
   const initial = (community.name || "?").trim().charAt(0).toUpperCase();
   const gradient = communityGradient(index);
 
+  // A broken cover/icon URL (deleted upload, bad media path, etc.) should
+  // drop into the same gradient/initial look used for "no image yet" —
+  // not the browser's default broken-image icon.
+  const [coverFailed, setCoverFailed] = useState(false);
+  const [iconFailed, setIconFailed] = useState(false);
+  useEffect(() => setCoverFailed(false), [community.cover_image]);
+  useEffect(() => setIconFailed(false), [community.icon]);
+
   return (
     <div className="comm-cover" style={{ height }}>
-      {community.cover_image ? (
-        <img className="comm-cover-img" src={community.cover_image} alt="" loading="lazy" />
+      {community.cover_image && !coverFailed ? (
+        <img
+          className="comm-cover-img"
+          src={community.cover_image}
+          alt=""
+          loading="lazy"
+          onError={() => setCoverFailed(true)}
+        />
       ) : (
         <div className="comm-cover-img comm-cover-fallback" style={{ background: gradient }} />
       )}
       {badge}
       <div className="comm-cover-icon-wrap">
-        {community.icon ? (
-          <img className="comm-cover-icon" src={community.icon} alt={community.name} />
+        {community.icon && !iconFailed ? (
+          <img
+            className="comm-cover-icon"
+            src={community.icon}
+            alt={community.name}
+            onError={() => setIconFailed(true)}
+          />
         ) : (
           <div className="comm-cover-icon comm-cover-icon-fallback" style={{ background: gradient }}>
             {initial}

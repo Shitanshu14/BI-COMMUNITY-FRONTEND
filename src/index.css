@@ -254,7 +254,18 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; colo
   position: sticky;
   top: 0;
   height: 100vh;
+  /* BUG FIX: content (nav links + the "Create. Connect. Grow Together"
+     promo box + its "Explore Communities" button) could add up to more
+     than 100vh on shorter screens or for staff accounts with the extra
+     "Support" link — with no scroll on this box, the promo panel simply
+     got pushed off-screen with no way to reach it. Making the sidebar
+     itself the scroll container keeps every link and the button reachable
+     regardless of viewport height. */
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .sidebar-topline { display: flex; align-items: center; justify-content: space-between; padding: 6px 4px 18px; }
 .sidebar-brand {
   font-family: var(--font-display);
@@ -665,6 +676,13 @@ h3 { font-size: 16px; }
 .rail-pinned-item:last-child { border-bottom: none; }
 .rail-pinned-item:hover .rail-pinned-title { color: var(--primary-ink); }
 .rail-pinned-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Reusable "cut long text off with …" utility — wrap just the text you
+   want clipped (not the whole flex row, or its siblings like a verified
+   tick / badge get squeezed too) in a span/div with this class. Needs a
+   min-width: 0 ancestor (already set on the *-meta/*-main wrapper) to
+   actually shrink inside a flex row instead of overflowing it. */
+.truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .post-body-row { display: flex; gap: 14px; align-items: flex-start; }
 .post-visual {
@@ -1130,7 +1148,7 @@ h3 { font-size: 16px; }
 .post-card-compact .post-image { max-height: 260px; }
 .post-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .post-head-meta { flex: 1; min-width: 0; }
-.post-author { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.post-author { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; min-width: 0; }
 .post-sub { font-size: 12px; color: var(--ink-faint); display: flex; align-items: center; gap: 6px; }
 .post-title {
   font-family: var(--font-display);
@@ -1255,7 +1273,7 @@ h3 { font-size: 16px; }
   transition: background 0.15s ease;
 }
 .user-row:hover { background: var(--accent-gradient-soft); }
-.user-row-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+.user-row-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 5px; min-width: 0; }
 .user-row-sub { font-size: 12px; color: var(--ink-faint); }
 .user-row-meta { flex: 1; min-width: 0; }
 .avatar {
@@ -1505,7 +1523,7 @@ h3 { font-size: 16px; }
 .support-user-row-compact { border: none; background: transparent; padding: 8px 0; }
 .support-user-row-compact:hover { box-shadow: none; }
 .support-user-main { flex: 1; min-width: 0; }
-.support-user-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; flex-wrap: wrap; }
+.support-user-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; flex-wrap: wrap; min-width: 0; }
 .support-user-sub { font-size: 12.5px; color: var(--ink-faint); margin-top: 2px; }
 .support-user-counts {
   display: none;
@@ -1757,13 +1775,62 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   padding: 3px 9px;
   border-radius: 100px;
 }
+/* --- WhatsApp-style DM / group chat --------------------------------- */
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--verified) 16%, var(--surface)) 0%, var(--surface) 75%);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
+}
+.chat-header h1 { margin: 0; font-size: 17px; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.chat-header h1 .truncate { flex-shrink: 1; }
+.chat-header-avatar { position: relative; flex-shrink: 0; line-height: 0; }
+.chat-header-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--verified);
+  border: 2.5px solid var(--surface);
+}
+.chat-header-meta { min-width: 0; }
+.chat-header-status { font-size: 12px; font-weight: 600; color: var(--ink-faint); margin-top: 1px; }
+.chat-header-status.live { color: var(--verified); }
+.chat-header-status.down { color: var(--danger); }
+
+.chat-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--border-soft);
+  padding: 5px 12px;
+  border-radius: 100px;
+  margin-bottom: 12px;
+}
+.chat-status.live { color: var(--verified); border-color: color-mix(in srgb, var(--verified) 35%, var(--border-soft)); }
+.chat-status.down { color: var(--danger); }
+
+/* Chat wallpaper — a faint dotted "doodle paper" texture (WhatsApp's
+   signature chat background) layered under the brand's existing corner
+   glows, instead of a flat panel. */
 .chat-log {
   height: 440px;
   overflow-y: auto;
   border: 1px solid var(--border);
   background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
     radial-gradient(600px 300px at 100% 0%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 60%),
-    radial-gradient(500px 260px at 0% 100%, color-mix(in srgb, var(--primary-2) 6%, transparent), transparent 60%),
+    radial-gradient(500px 280px at 0% 100%, color-mix(in srgb, var(--verified) 10%, transparent), transparent 60%),
     var(--surface);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
@@ -1793,17 +1860,44 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   word-break: break-word;
   white-space: pre-wrap;
 }
+/* Outgoing bubbles pick up the app's existing "verified" green — the one
+   color already in the palette that reads instantly as "WhatsApp" —
+   with a small corner tail like a real chat bubble. */
 .bubble-row.mine .bubble {
-  background: var(--accent-gradient);
+  background: linear-gradient(135deg, var(--verified) 0%, color-mix(in srgb, var(--verified) 65%, #063b2c) 100%);
   color: #fff;
-  border-bottom-right-radius: 5px;
-  box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 2px 8px -3px color-mix(in srgb, var(--primary-2) 45%, transparent);
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--verified) 55%, transparent);
+}
+.bubble-row.mine .bubble::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border: 7px solid transparent;
+  border-left-color: var(--verified);
+  border-right: 0;
+  border-bottom: 0;
 }
 .bubble-row.theirs .bubble {
   background: var(--surface-soft);
   border: 1px solid var(--border-soft);
   color: var(--ink);
-  border-bottom-left-radius: 5px;
+  border-bottom-left-radius: 4px;
+}
+.bubble-row.theirs .bubble::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border: 7px solid transparent;
+  border-right-color: var(--surface-soft);
+  border-left: 0;
+  border-bottom: 0;
 }
 .bubble-who {
   font-weight: 700;
@@ -1818,11 +1912,39 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   font-size: 10.5px;
   color: var(--ink-faint);
   margin-top: 2px;
-  padding: 0 4px;
+  padding: 0 8px;
 }
 .bubble-row.mine .bubble-meta { justify-content: flex-end; }
 .read-tick { font-size: 11px; color: var(--ink-faint); letter-spacing: -1px; }
 .read-tick.read { color: #4fa3f7; }
+
+/* Rounded, pill-shaped composer + circular send button, WhatsApp-style. */
+.chat-input-row { display: flex; gap: 10px; align-items: center; }
+.chat-input-row input {
+  margin-bottom: 0;
+  border-radius: 100px;
+  padding: 11px 18px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border-soft);
+}
+.chat-send-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--verified) 0%, color-mix(in srgb, var(--verified) 65%, #063b2c) 100%);
+  color: #fff;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--verified) 60%, transparent);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+.chat-send-btn:hover:not(:disabled) { transform: translateY(-1px) scale(1.04); }
+.chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
 
 /* Caption text under a media/shared-content bubble (whatsapp-style: the
    card fills the bubble, any typed caption sits just below it). */
@@ -1987,11 +2109,6 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   border-radius: 100px;
   line-height: 1.5;
 }
-.chat-input-row { display: flex; gap: 10px; }
-.chat-input-row input { margin-bottom: 0; }
-.chat-status { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); margin-bottom: 8px; }
-.chat-status.live { color: var(--verified); }
-.chat-status.down { color: var(--danger); }
 
 /* Suggested communities rail (discovery page) */
 .suggested-row {
@@ -2737,6 +2854,47 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
 .comm-section-head h2 { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin: 0; }
 .comm-section-head p { color: var(--ink-faint); font-size: 13px; margin: 2px 0 0; }
 
+/* Communities page header — replaces the old "+ Create Community" button.
+   Communities are now only ever created from the Support/Control Room
+   ("+ New community"), so this spot instead shows what's happening in
+   Communities right now: the top trending one and how many exist. */
+.comm-status-chip {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px 20px;
+}
+.comm-status-item { display: flex; align-items: center; gap: 10px; }
+.comm-status-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background: var(--surface-soft);
+  flex-shrink: 0;
+}
+.comm-status-label { font-size: 11px; color: var(--ink-faint); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.comm-status-value {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.comm-status-divider { width: 1px; height: 30px; background: var(--border); flex-shrink: 0; }
+@media (max-width: 520px) {
+  .comm-status-chip { width: 100%; justify-content: space-between; padding: 10px 14px; }
+  .comm-status-value { max-width: 110px; }
+}
+
 .comm-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
 /* Discover/My-Communities style grids show exactly 4 cards per row on
    desktop (matches the dashboard mockup), stepping down to 3 / 2 / 1 as
@@ -2860,7 +3018,7 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
   background: var(--accent-gradient);
 }
 .trending-info { flex: 1; min-width: 0; }
-.trending-name { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14.5px; flex-wrap: wrap; }
+.trending-name { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14.5px; flex-wrap: wrap; min-width: 0; }
 .trending-cat { font-size: 10.5px; padding: 2px 8px; }
 .trending-desc { color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trending-members { font-size: 13px; color: var(--ink-soft); white-space: nowrap; flex-shrink: 0; }
@@ -2927,3 +3085,130 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); }
 .field-hint { font-size: 12px; color: var(--ink-faint); margin-top: 26px; }
 .create-community-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-soft); cursor: pointer; }
 .create-community-checkbox input { width: auto; margin: 0; }
+
+/* Phone view: communities show as a flat, line-wise list — like a
+   WhatsApp chat list — instead of the card grid. Desktop keeps the
+   cards untouched; this only kicks in below the phone breakpoint. */
+@media (max-width: 640px) {
+  .comm-row,
+  .comm-row-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: visible;
+  }
+
+  .comm-card {
+    width: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-soft);
+    border-radius: 0;
+    box-shadow: none;
+    transform: none !important;
+  }
+  .comm-card:hover { box-shadow: none; transform: none; }
+  .comm-card:last-child { border-bottom: none; }
+
+  .comm-card .comm-cover {
+    position: static;
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    margin: 12px 12px 12px 2px;
+    border-radius: 50%;
+    background: none;
+  }
+  .comm-card .comm-cover-img { display: none; }
+  .comm-card .comm-badge { display: none; }
+  .comm-card .comm-cover-icon-wrap {
+    position: static;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .comm-card .comm-cover-icon,
+  .comm-card .comm-cover-icon-fallback {
+    width: 100%;
+    height: 100%;
+    font-size: 18px;
+  }
+
+  .comm-card .comm-card-body {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 4px 10px 0;
+  }
+  .comm-card .comm-card-title { font-size: 15px; }
+  .comm-card .comm-card-desc {
+    min-height: 0;
+    margin: 2px 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .comm-card .comm-card-foot { flex-wrap: wrap; }
+}
+
+/* Phone view: Circles page gets the same WhatsApp-style line list as
+   Communities — scoped to .circles-page only, since .community-grid /
+   .community-card are also reused by Search results, which stays a grid.
+   Circle cards don't have a "body" wrapper around title/desc/meta (they're
+   plain siblings of .community-card-head), so this uses an explicit grid
+   instead of flex to place the avatar as one column and the text stack
+   as a second column spanning three rows. */
+@media (max-width: 640px) {
+  .circles-page .community-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .circles-page .community-card {
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    grid-template-rows: auto auto auto;
+    column-gap: 12px;
+    row-gap: 0;
+    align-items: center;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-soft);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 10px 4px;
+    transform: none !important;
+  }
+  .circles-page .community-card:hover { box-shadow: none; transform: none; }
+  .circles-page .community-card:last-child { border-bottom: none; }
+  .circles-page .community-card::before { display: none; }
+  .circles-page .community-card .card-gallery { display: none; }
+  .circles-page .community-card:has(.card-gallery) { padding-top: 10px; }
+
+  .circles-page .community-card-head {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    margin-bottom: 0;
+    align-self: center;
+  }
+  .circles-page .community-card-head .badge { display: none; }
+  .circles-page .community-card .entry-title { grid-column: 2; grid-row: 1; font-size: 15px; }
+  .circles-page .community-card-desc {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    margin: 2px 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .circles-page .community-card-meta { grid-column: 2; grid-row: 3; margin-top: 2px; }
+}
